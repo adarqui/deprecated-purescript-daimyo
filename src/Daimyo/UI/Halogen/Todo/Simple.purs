@@ -47,8 +47,11 @@ import Network.HTTP.MimeType
 import Network.HTTP.MimeType.Common
 import Network.HTTP.RequestHeader
 
+import Routing
+
 import Daimyo.Control.Monad
 import Daimyo.Applications.Todo.Simple
+import Daimyo.UI.Shared
 import qualified Daimyo.Data.Map as M
 
 data AppState = AppState TodoApp (Maybe String)
@@ -63,26 +66,24 @@ data UIResponse
   | UIRespClearInput
   | UIRespNoOp
 
-appendToBody :: forall eff. HTMLElement -> Eff (dom :: DOM | eff) Unit
-appendToBody e = document globalWindow >>= (body >=> flip appendChild e)
-
--- | class_
---
-class_ s = A.class_ $ A.className s
-
 -- | ui
 --
 ui :: forall eff. Component (E.Event (HalogenEffects (ajax :: AJAX | eff))) Input Input
 ui = render <$> stateful (AppState newTodoApp Nothing) update
   where
   render :: AppState -> H.HTML (E.Event (HalogenEffects (ajax :: AJAX | eff)) Input)
-  render (AppState app new) = appLayout
+  render (AppState app inp) = appLayout
     where
     appLayout =
       H.section [class_ "todoapp"] [
         H.header [class_ "header"] [
           H.h1_ [H.text "todos"],
-          H.input [class_ "new-todo", A.placeholder "What needs to be done?", A.onValueChanged (A.input (\x -> InputUI (UIRespInput (Just x)))), A.onKeyUp (\e -> pure (handleNewTodo e.keyCode new))] []
+          H.input [
+            class_ "new-todo",
+            A.placeholder "What needs to be done?",
+            maybe (A.value "") A.value inp,
+            A.onValueChanged (\x -> pure (handleNewTodo x))
+          ] []
         ],
         H.section [class_ "main"] [
           H.input [class_ "toggle-all", A.type_ "checkbox"] [H.label_ [H.text "Mark all as complete"]],
@@ -115,13 +116,13 @@ ui = render <$> stateful (AppState newTodoApp Nothing) update
     ]
 
   update :: AppState -> Input -> AppState
-  update (AppState app new) (InputTodo (RespListTodos xs))          = AppState (execState (clearTodos >> mapM addTodoDirectly xs) app) new
-  update (AppState app new) (InputTodo (RespAddTodo todo))          = AppState (execState (addTodoDirectly todo) app) new
-  update (AppState app new) (InputTodo (RespRemoveTodo Nothing))    = AppState app new
-  update (AppState app new) (InputTodo (RespRemoveTodo (Just tid))) = AppState (execState (removeTodo tid) app) new
-  update (AppState app new) (InputTodo (RespClearTodos _))          = AppState (execState (clearTodos) app) new
---  update (State todos new) RespClearCompletedTodos = State [] new
-  update (AppState app new) (InputUI (UIRespInput new'))            = AppState app new'
+  update (AppState app inp) (InputTodo (RespListTodos xs))          = AppState (execState (clearTodos >> mapM addTodoDirectly xs) app) inp
+  update (AppState app inp) (InputTodo (RespAddTodo todo))          = AppState (execState (addTodoDirectly todo) app) inp
+  update (AppState app inp) (InputTodo (RespRemoveTodo Nothing))    = AppState app inp
+  update (AppState app inp) (InputTodo (RespRemoveTodo (Just tid))) = AppState (execState (removeTodo tid) app) inp
+  update (AppState app inp) (InputTodo (RespClearTodos _))          = AppState (execState (clearTodos) app) inp
+--  update (State todos inp) RespClearCompletedTodos = State [] inp
+  update (AppState app inp) (InputUI (UIRespInput inp'))            = AppState app inp'
   update (AppState app _)   (InputUI (UIRespClearInput))            = AppState app Nothing
   update st (InputUI UIRespNoOp)                                    = st
   update st (InputUI UIRespBusy)                                    = st
@@ -135,10 +136,8 @@ todosActive todos = filter (\(Todo{ todoState = state}) -> state == Active) todo
 handleListTodos :: forall eff. E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
 handleListTodos = E.yield (InputUI UIRespBusy) `E.andThen` \_ -> E.async affListTodos
 
-handleNewTodo :: forall eff. Number -> Maybe String -> E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
-handleNewTodo 13.0 Nothing  = return $ InputTodo RespNoOp
-handleNewTodo 13.0 (Just s) = handleAddTodo $ defaultTodo s
-handleNewTodo _    _        = return $ InputTodo RespNoOp
+handleNewTodo :: forall eff. String -> E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
+handleNewTodo s = E.yield (InputUI UIRespClearInput) `E.andThen` \_ -> handleAddTodo $ defaultTodo s
 
 handleAddTodo :: forall eff. Todo -> E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
 handleAddTodo todo = E.yield (InputUI UIRespClearInput) `E.andThen` \_ -> E.yield (InputUI UIRespBusy) `E.andThen` \_ -> E.async (affAddTodo todo)
