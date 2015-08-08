@@ -54,7 +54,7 @@ import Daimyo.Applications.Todo.Simple
 import Daimyo.UI.Shared
 import qualified Daimyo.Data.Map as M
 
-data AppState = AppState TodoApp (Maybe String)
+data AppState = AppState TodoApp (Maybe String) TodoView
 
 data Input
   = InputUI UIResponse
@@ -64,15 +64,21 @@ data UIResponse
   = UIRespBusy
   | UIRespInput (Maybe String)
   | UIRespClearInput
+  | UISetView TodoView
   | UIRespNoOp
+
+data TodoView
+  = ViewAll
+  | ViewActive
+  | ViewCompleted
 
 -- | ui
 --
 ui :: forall eff. Component (E.Event (HalogenEffects (ajax :: AJAX | eff))) Input Input
-ui = render <$> stateful (AppState newTodoApp Nothing) update
+ui = render <$> stateful (AppState newTodoApp Nothing ViewAll) update
   where
   render :: AppState -> H.HTML (E.Event (HalogenEffects (ajax :: AJAX | eff)) Input)
-  render (AppState app inp) = appLayout
+  render (AppState app inp view) = appLayout
     where
     appLayout =
       H.section [class_ "todoapp"] [
@@ -116,16 +122,17 @@ ui = render <$> stateful (AppState newTodoApp Nothing) update
     ]
 
   update :: AppState -> Input -> AppState
-  update (AppState app inp) (InputTodo (RespListTodos xs))          = AppState (execState (clearTodos >> mapM addTodoDirectly xs) app) inp
-  update (AppState app inp) (InputTodo (RespAddTodo todo))          = AppState (execState (addTodoDirectly todo) app) inp
-  update (AppState app inp) (InputTodo (RespRemoveTodo Nothing))    = AppState app inp
-  update (AppState app inp) (InputTodo (RespRemoveTodo (Just tid))) = AppState (execState (removeTodo tid) app) inp
-  update (AppState app inp) (InputTodo (RespClearTodos _))          = AppState (execState (clearTodos) app) inp
---  update (State todos inp) RespClearCompletedTodos = State [] inp
-  update (AppState app inp) (InputUI (UIRespInput inp'))            = AppState app inp'
-  update (AppState app _)   (InputUI (UIRespClearInput))            = AppState app Nothing
-  update st (InputUI UIRespNoOp)                                    = st
-  update st (InputUI UIRespBusy)                                    = st
+  update (AppState app inp view) (InputTodo (RespListTodos xs))          = AppState (execState (clearTodos >> mapM addTodoDirectly xs) app) inp view
+  update (AppState app inp view) (InputTodo (RespAddTodo todo))          = AppState (execState (addTodoDirectly todo) app) inp view
+  update (AppState app inp view) (InputTodo (RespRemoveTodo Nothing))    = AppState app inp view
+  update (AppState app inp view) (InputTodo (RespRemoveTodo (Just tid))) = AppState (execState (removeTodo tid) app) inp view
+  update (AppState app inp view) (InputTodo (RespClearTodos _))          = AppState (execState (clearTodos) app) inp view
+--  update (State todos inp view) RespClearCompletedTodos = State [] inp view
+  update (AppState app inp view) (InputUI (UIRespInput inp'))            = AppState app inp' view
+  update (AppState app _ view)   (InputUI (UIRespClearInput))            = AppState app Nothing view
+  update (AppState app inp view) (InputUI (UISetView view'))             = AppState app inp view'
+  update st (InputUI UIRespNoOp)                                         = st
+  update st (InputUI UIRespBusy)                                         = st
 
 todosActiveLength :: Array Todo -> Int
 todosActiveLength = length <<< todosActive
@@ -179,7 +186,14 @@ affClearCompleted = do
                 Just t  -> if t then InputUI UIRespNoOp else InputUI UIRespNoOp
 --                Just t  -> if t then RespClearCompletedTodos else RespNoOp
 
+handleViewChange "active"    = ViewActive
+handleViewChange "completed" = ViewCompleted
+handleViewChange _           = ViewAll
+
 uiHalogenTodoSimpleMain = do
   Tuple node driver <- runUI ui
   appendToBody node
   runAff throwException driver affListTodos
+  hashChanged (\from to -> do
+              runAff throwException driver $ do
+                return $ InputUI (UISetView $ handleViewChange to))
