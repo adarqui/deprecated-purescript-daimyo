@@ -5,3 +5,5 @@ dist/
 node_modules/
 .psci_modules/
 .browserify-cache.json
+!dist/.empty
+!output/.empty
