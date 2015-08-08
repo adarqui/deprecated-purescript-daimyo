@@ -3,7 +3,7 @@ module Daimyo.UI.Halogen.Todo.Simple (
 ) where
 
 import Prelude
-import Data.Array (filter, length, (:))
+import Data.Array (filter, length, (:), uncons)
 import Data.Tuple
 import Data.Maybe
 import Data.JSON
@@ -53,19 +53,20 @@ import Daimyo.Control.Monad
 import Daimyo.Applications.Todo.Simple
 import Daimyo.UI.Shared
 import qualified Daimyo.Data.Map as M
+import qualified Data.Map as M
 
 data AppState = AppState TodoApp (Maybe String) TodoView
 
 data Input
-  = InputUI UIResponse
-  | InputTodo TodoActionResponse
-
-data UIResponse
-  = UIRespBusy
-  | UIRespInput (Maybe String)
-  | UIRespClearInput
-  | UISetView TodoView
-  | UIRespNoOp
+  = OpListTodos (Array Todo)
+  | OpAddTodo Todo
+  | OpRemoveTodo TodoId
+  | OpClearTodos
+  | OpClearCompletedTodos
+  | OpClearInput
+  | OpSetView TodoView
+  | OpNop
+  | OpBusy
 
 data TodoView
   = ViewAll
@@ -97,11 +98,11 @@ ui = render <$> stateful (AppState newTodoApp Nothing ViewAll) update
           H.footer [class_ "footer"] [
             H.span [class_ "todo-count"] [H.strong_ [H.text $ show $ todosActiveLength (map snd $ M.toArray $ todoAppTodos app)], H.text " items left"],
             H.ul [class_ "filters"] [
-              H.li_ [H.text "selected"],
-              H.li_ [H.text "active"],
-              H.li_ [H.text "completed"]
+              H.li_ [H.a [A.href "#"] [H.text "all"]],
+              H.li_ [H.a [A.href "#active"] [H.text "Active"]],
+              H.li_ [H.a [A.href "#completed"] [H.text "Completed"]]
             ],
-            H.button [class_ "clear-completed", A.onClick (\_ -> pure handleClearCompleted)] [H.text "Clear completed"]
+            H.button [class_ "clear-completed", A.onClick (\_ -> pure (handleClearCompleted $ map snd $ M.toArray $ todoAppTodos app))] [H.text "Clear completed"]
           ]
         ],
         H.footer [class_ "info"] [
@@ -122,17 +123,14 @@ ui = render <$> stateful (AppState newTodoApp Nothing ViewAll) update
     ]
 
   update :: AppState -> Input -> AppState
-  update (AppState app inp view) (InputTodo (RespListTodos xs))          = AppState (execState (clearTodos >> mapM addTodoDirectly xs) app) inp view
-  update (AppState app inp view) (InputTodo (RespAddTodo todo))          = AppState (execState (addTodoDirectly todo) app) inp view
-  update (AppState app inp view) (InputTodo (RespRemoveTodo Nothing))    = AppState app inp view
-  update (AppState app inp view) (InputTodo (RespRemoveTodo (Just tid))) = AppState (execState (removeTodo tid) app) inp view
-  update (AppState app inp view) (InputTodo (RespClearTodos _))          = AppState (execState (clearTodos) app) inp view
---  update (State todos inp view) RespClearCompletedTodos = State [] inp view
-  update (AppState app inp view) (InputUI (UIRespInput inp'))            = AppState app inp' view
-  update (AppState app _ view)   (InputUI (UIRespClearInput))            = AppState app Nothing view
-  update (AppState app inp view) (InputUI (UISetView view'))             = AppState app inp view'
-  update st (InputUI UIRespNoOp)                                         = st
-  update st (InputUI UIRespBusy)                                         = st
+  update (AppState app inp view) (OpListTodos xs)   = AppState (execState (clearTodos >> mapM addTodoDirectly xs) app) inp view
+  update (AppState app inp view) (OpAddTodo todo)   = AppState (execState (addTodoDirectly todo) app) inp view
+  update (AppState app inp view) (OpRemoveTodo tid) = AppState (execState (removeTodo tid) app) inp view
+  update (AppState app inp view) OpClearTodos       = AppState (execState (clearTodos) app) inp view
+  update (AppState app _ view)   OpClearInput       = AppState app Nothing view
+  update (AppState app inp view) (OpSetView view')  = AppState app inp view'
+  update st OpNop                                   = st
+  update st OpBusy                                  = st
 
 todosActiveLength :: Array Todo -> Int
 todosActiveLength = length <<< todosActive
@@ -141,50 +139,49 @@ todosActive :: Array Todo -> Array Todo
 todosActive todos = filter (\(Todo{ todoState = state}) -> state == Active) todos
 
 handleListTodos :: forall eff. E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
-handleListTodos = E.yield (InputUI UIRespBusy) `E.andThen` \_ -> E.async affListTodos
+handleListTodos = E.yield OpBusy `E.andThen` \_ -> E.async affListTodos
 
 handleNewTodo :: forall eff. String -> E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
-handleNewTodo s = E.yield (InputUI UIRespClearInput) `E.andThen` \_ -> handleAddTodo $ defaultTodo s
+handleNewTodo s = E.yield OpClearInput `E.andThen` \_ -> handleAddTodo $ defaultTodo s
 
 handleAddTodo :: forall eff. Todo -> E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
-handleAddTodo todo = E.yield (InputUI UIRespClearInput) `E.andThen` \_ -> E.yield (InputUI UIRespBusy) `E.andThen` \_ -> E.async (affAddTodo todo)
+handleAddTodo todo = E.yield OpClearInput `E.andThen` \_ -> E.yield OpBusy `E.andThen` \_ -> E.async (affAddTodo todo)
 
 handleRemoveTodo :: forall eff. TodoId -> E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
-handleRemoveTodo tid = E.yield (InputUI UIRespBusy) `E.andThen` \_ -> E.async (affRemoveTodo tid)
+handleRemoveTodo tid = E.yield OpBusy `E.andThen` \_ -> E.async (affRemoveTodo tid)
 
-handleClearCompleted :: forall eff. E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
-handleClearCompleted = E.yield (InputUI UIRespBusy) `E.andThen` \_ -> E.async affClearCompleted
+handleClearCompleted :: forall eff. Array Todo -> E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
+handleClearCompleted todos = go (filter (\(Todo todo) -> todo.todoState == Completed) todos)
+--  _ <- mapM_ (\(Todo todo) -> handleRemoveTodo (todo.todoId)) todos
+--  return OpNop
+  where
+  go xs = do
+    case (uncons xs) of
+         Nothing                          -> return OpNop
+         Just { head: (Todo h), tail: t } -> do
+           E.async (affRemoveTodo h.todoId) `E.andThen` \_ -> handleClearCompleted t
 
 affListTodos = do
   res <- get "/applications/simple/todos"
   liftEff $ log res.response
   let todos = decode res.response :: Maybe (Array Todo)
-  return $ InputTodo $ RespListTodos (fromMaybe [] todos)
+  return $ OpListTodos (fromMaybe [] todos)
 
 affAddTodo todo = do
   res <- affjax $ defaultRequest { method = POST, url = "/applications/simple/todos", content = Just (encode (todo :: Todo)), headers = [ContentType applicationJSON] }
   liftEff $ log res.response
   let todo' = decode res.response :: Maybe Todo
   return $ case todo' of
-                Nothing   -> InputTodo RespNoOp
-                Just v    -> InputTodo $ RespAddTodo v
+                Nothing   -> OpNop
+                Just v    -> OpAddTodo v
 
 affRemoveTodo tid = do
   res <- delete ("/applications/simple/todos/" ++ show (tid :: TodoId))
   liftEff $ log res.response
   let tid = decode res.response :: Maybe TodoId
   return $ case tid of
-                Nothing   -> InputTodo $ RespNoOp
-                Just tid' -> InputTodo $ RespRemoveTodo (Just tid')
-
-affClearCompleted = do
-  res <- delete "/applications/simple/todos"
-  liftEff $ log res.response
-  let status = decode res.response :: Maybe Boolean
-  return $ case status of
-                Nothing -> InputUI UIRespNoOp
-                Just t  -> if t then InputUI UIRespNoOp else InputUI UIRespNoOp
---                Just t  -> if t then RespClearCompletedTodos else RespNoOp
+                Nothing   -> OpNop
+                Just tid' -> OpRemoveTodo tid'
 
 handleViewChange "active"    = ViewActive
 handleViewChange "completed" = ViewCompleted
@@ -196,4 +193,4 @@ uiHalogenTodoSimpleMain = do
   runAff throwException driver affListTodos
   hashChanged (\from to -> do
               runAff throwException driver $ do
-                return $ InputUI (UISetView $ handleViewChange to))
+                return $ (OpSetView $ handleViewChange to))
