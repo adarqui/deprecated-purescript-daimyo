@@ -39,7 +39,8 @@
     "todomvc-app-css": "~2.0.1",
     "todomvc-common": "~1.0.2",
     "purescript-transformers": "~0.6.1",
-    "purescript-maps": "~0.4.2"
+    "purescript-maps": "~0.4.2",
+    "purescript-routing": "~0.1.0"
   },
   "devDependencies": {
     "purescript-assert": "^0.1.0"
