@@ -164,28 +164,34 @@ ui = render <$> stateful (AppState newTodoApp Nothing ViewAll ModeView) update
   update st OpBusy                                            = st
 
 handleListTodos :: forall eff. E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
-handleListTodos = E.yield OpBusy `E.andThen` \_ -> E.async affListTodos
+handleListTodos = E.async affListTodos
 
 handleNewTodo :: forall eff. String -> E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
-handleNewTodo s = E.yield OpClearInput `E.andThen` \_ -> handleAddTodo $ defaultTodo s
+handleNewTodo s =
+  E.yield OpClearInput `E.andThen`
+  (const $ handleAddTodo $ defaultTodo s)
 
 handleAddTodo :: forall eff. Todo -> E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
-handleAddTodo todo = E.yield OpClearInput `E.andThen` \_ -> E.yield OpBusy `E.andThen` \_ -> E.async (affAddTodo todo)
+handleAddTodo todo =
+  E.yield OpClearInput `E.andThen`
+  (const $ E.async (affAddTodo todo))
 
 handleRemoveTodo :: forall eff. TodoId -> E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
-handleRemoveTodo tid = E.yield OpBusy `E.andThen` \_ -> E.async (affRemoveTodo tid)
+handleRemoveTodo = E.async <<< affRemoveTodo
 
 handleUpdateTodo :: forall eff. TodoId -> String -> TodoState -> E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
-handleUpdateTodo tid title state = E.yield OpBusy `E.andThen` \_ -> E.async (affUpdateTodo (Todo{todoId: tid, todoTitle: title, todoState: state})) `E.andThen` \_ -> return $ OpSetMode ModeView
+handleUpdateTodo tid title state =
+  E.async (affUpdateTodo (Todo{todoId: tid, todoTitle: title, todoState: state})) `E.andThen`
+  (const $ return $ OpSetMode ModeView)
 
 handleClearCompleted :: forall eff. Array Todo -> E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
-handleClearCompleted = go --go (filter (\(Todo todo) -> todo.todoState == Completed) todos)
+handleClearCompleted = go
   where
   go xs = do
     case (uncons xs) of
          Nothing                          -> return OpNop
          Just { head: (Todo h), tail: t } -> do
-           E.async (affRemoveTodo h.todoId) `E.andThen` \_ -> handleClearCompleted t
+           E.async (affRemoveTodo h.todoId) `E.andThen` (const $ handleClearCompleted t)
 
 affListTodos = do
   res <- get "/applications/simple/todos"
