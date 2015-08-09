@@ -37,7 +37,10 @@ import qualified Halogen.HTML.Events.Types as T
 
 import qualified Data.Set as S
 
+import Data.Foreign
 import Data.Foreign.Class
+
+import Global (readFloat)
 
 import Daimyo.UI.Shared
 import Daimyo.Data.ArrayList
@@ -51,10 +54,10 @@ data Input a
 
 -- | ui
 --
-ui :: forall a eff. (Ord a, Show a, IsForeign a) => a -> Component (E.Event (HalogenEffects eff)) (Input a) (Input a)
-ui _ = render <$> stateful (AppSet S.empty Nothing) update
+ui :: forall a eff. (Ord a, Show a) => (String -> a) -> Component (E.Event (HalogenEffects eff)) (Input a) (Input a)
+ui read = render <$> stateful (AppSet S.empty Nothing) update
   where
-  render :: forall a. (Ord a, Show a, IsForeign a) => AppSet a -> H.HTML (E.Event (HalogenEffects eff) (Input a))
+  render :: forall a. (Ord a, Show a) => AppSet a -> H.HTML (E.Event (HalogenEffects eff) (Input a))
   render (AppSet app inp) = appLayout
     where
     appLayout =
@@ -64,7 +67,7 @@ ui _ = render <$> stateful (AppSet S.empty Nothing) update
           H.input [
             A.placeholder "value",
             maybe (A.value "") A.value inp,
-            A.onValueChanged (pure <<< handleNewValue)
+            A.onValueChanged (pure <<< handleNewValue <<< read)
           ] [],
           H.p_ [displaySet]
         ]
@@ -77,14 +80,14 @@ ui _ = render <$> stateful (AppSet S.empty Nothing) update
     -- | setItem
     setItem item = H.li_ [H.text $ show item]
 
-  update :: forall a. (Ord a, Show a, IsForeign a) => AppSet a -> Input a -> AppSet a
+  update :: forall a. (Ord a, Show a) => AppSet a -> Input a -> AppSet a
   update (AppSet set s) OpClearSet     = AppSet set s
   update (AppSet set s) (OpAddToSet v) = AppSet (S.insert v set) s
   update st             OpNop          = st
 
-handleNewValue :: forall a eff. (Ord a, Show a, IsForeign a) => a -> E.Event (HalogenEffects eff) (Input a)
+handleNewValue :: forall a eff. (Ord a, Show a) => a -> E.Event (HalogenEffects eff) (Input a)
 handleNewValue x = return $ OpAddToSet x
 
 uiHalogenSetMain = do
-  Tuple node driver <- runUI (ui (1.0 :: Number))
+  Tuple node driver <- runUI $ ui readFloat
   appendToBody node
