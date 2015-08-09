@@ -97,6 +97,7 @@ ui = render <$> stateful (AppState newTodoApp Nothing ViewAll ModeView) update
   render :: AppState -> H.HTML (E.Event (HalogenEffects (ajax :: AJAX | eff)) Input)
   render (AppState app inp view mode) = appLayout
     where
+    run commands = evalState commands app
     appLayout =
       H.section [class_ "todoapp"] [
         H.header [class_ "header"] [
@@ -105,20 +106,20 @@ ui = render <$> stateful (AppState newTodoApp Nothing ViewAll ModeView) update
             class_ "new-todo",
             A.placeholder "What needs to be done?",
             maybe (A.value "") A.value inp,
-            A.onValueChanged (\x -> pure (handleNewTodo x))
+              A.onValueChanged (pure <<< handleNewTodo)
           ] []
         ],
         H.section [class_ "main"] [
           H.input [class_ "toggle-all", A.type_ "checkbox"] [H.label_ [H.text "Mark all as complete"]],
-          H.ul [class_ "todo-list"] $ map todoListItem (todosFilter $ map snd $ M.toArray $ todoAppTodos app),
+          H.ul [class_ "todo-list"] $ map todoListItem todosFilter,
           H.footer [class_ "footer"] [
-            H.span [class_ "todo-count"] [H.strong_ [H.text $ show $ todosActiveLength (map snd $ M.toArray $ todoAppTodos app)], H.text " items left"],
+            H.span [class_ "todo-count"] [H.strong_ [H.text $ show $ length $ run listActiveTodos], H.text " items left"],
             H.ul [class_ "filters"] [
               H.li_ [H.a [A.href "#"] [H.text "All"]],
               H.li_ [H.a [A.href "#active"] [H.text "Active"]],
               H.li_ [H.a [A.href "#completed"] [H.text "Completed"]]
             ],
-            H.button [class_ "clear-completed", A.onClick (\_ -> pure (handleClearCompleted $ map snd $ M.toArray $ todoAppTodos app))] [H.text "Clear completed"]
+            H.button [class_ "clear-completed", A.onClick (const $ pure (handleClearCompleted $ run listCompletedTodos))] [H.text "Clear completed"]
           ]
         ],
         H.footer [class_ "info"] [
@@ -128,24 +129,24 @@ ui = render <$> stateful (AppState newTodoApp Nothing ViewAll ModeView) update
         ]
       ]
 
-    todosFilter :: Array Todo -> Array Todo
-    todosFilter todos
-      | view == ViewAll       = todos
-      | view == ViewActive    = filter (\(Todo todo) -> todo.todoState == Active)    todos
-      | view == ViewCompleted = filter (\(Todo todo) -> todo.todoState == Completed) todos
+    todosFilter :: Array Todo
+    todosFilter
+      | view == ViewAll       = run listTodos
+      | view == ViewActive    = run listActiveTodos
+      | view == ViewCompleted = run listCompletedTodos
 
     todoListItem (todo@Todo{todoId=tid, todoTitle=title, todoState=state}) =
-      let v = H.label [A.onClick (\_ -> pure $ return $ OpSetMode (ModeEdit tid))] [H.text title] in
+      let v = H.label [A.onClick (const $ pure $ return $ OpSetMode (ModeEdit tid))] [H.text title] in
       H.li [if state == Completed then class_ "completed" else class_ "active"] [
         H.div [class_ "view"] [
-          H.input [class_ "toggle", A.type_ "checkbox", A.checked (state == Completed), A.onChange (\_ -> pure (handleUpdateTodo tid title (toggleTodoState state)))] [],
+          H.input [class_ "toggle", A.type_ "checkbox", A.checked (state == Completed), A.onChange (const $ pure (handleUpdateTodo tid title (toggleTodoState state)))] [],
           case mode of
              ModeView      -> v
              ModeEdit tid' ->
               if tid /= tid'
                  then v
-                 else H.input [ class_ "new-todo", A.value title, A.onValueChanged (\x -> pure (handleUpdateTodo tid x state)), A.onFocusOut (\_ -> pure (return $ OpSetMode ModeView)) ] [],
-          H.button [class_ "destroy", A.onClick (\_ -> pure (handleRemoveTodo tid))] []
+                 else H.input [ class_ "new-todo", A.value title, A.onValueChanged (\x -> pure (handleUpdateTodo tid x state)), A.onFocusOut (const $> pure (return $ OpSetMode ModeView)) ] [],
+          H.button [class_ "destroy", A.onClick (const $ pure (handleRemoveTodo tid))] []
         ],
         H.input [class_ "edit", A.value title] []
       ]
@@ -155,7 +156,7 @@ ui = render <$> stateful (AppState newTodoApp Nothing ViewAll ModeView) update
   update (AppState app inp view mode) (OpAddTodo todo)        = AppState (execState (addTodoDirectly todo) app) inp view mode
   update (AppState app inp view mode) (OpRemoveTodo tid)      = AppState (execState (removeTodo tid) app) inp view mode
   update (AppState app inp view mode) (OpUpdateTodo tid todo) = AppState (execState (updateTodo tid todo) app) inp view mode
-  update (AppState app inp view mode) OpClearTodos            = AppState (execState (clearTodos) app) inp view mode
+  update (AppState app inp view mode) OpClearTodos            = AppState (execState clearTodos app) inp view mode
   update (AppState app _ view mode)   OpClearInput            = AppState app Nothing view mode
   update (AppState app inp view mode) (OpSetView view')       = AppState app inp view' mode
   update (AppState app inp view _)    (OpSetMode mode)        = AppState app inp view mode
@@ -184,7 +185,7 @@ handleUpdateTodo :: forall eff. TodoId -> String -> TodoState -> E.Event (Haloge
 handleUpdateTodo tid title state = E.yield OpBusy `E.andThen` \_ -> E.async (affUpdateTodo (Todo{todoId: tid, todoTitle: title, todoState: state})) `E.andThen` \_ -> return $ OpSetMode ModeView
 
 handleClearCompleted :: forall eff. Array Todo -> E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
-handleClearCompleted todos = go (filter (\(Todo todo) -> todo.todoState == Completed) todos)
+handleClearCompleted = go --go (filter (\(Todo todo) -> todo.todoState == Completed) todos)
   where
   go xs = do
     case (uncons xs) of

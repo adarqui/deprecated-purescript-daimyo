@@ -123,6 +123,16 @@ newTodoApp = TodoApp { todoAppCounter: 0, todoAppTodos: M.empty }
 listTodos :: forall eff a. TodoAppState (Array Todo)
 listTodos = map snd <$> gets (M.toArray <<< todoAppTodos)
 
+-- | listActiveTodos
+--
+listActiveTodos :: forall eff a. TodoAppState (Array Todo)
+listActiveTodos = filter (\(Todo todo) -> todo.todoState == Active) <$> listTodos
+
+-- | listCompletedTodos
+--
+listCompletedTodos :: forall eff a. TodoAppState (Array Todo)
+listCompletedTodos = filter (\(Todo todo) -> todo.todoState == Completed) <$> listTodos
+
 -- | clearTodos
 --
 clearTodos :: forall eff a. TodoAppState Int
