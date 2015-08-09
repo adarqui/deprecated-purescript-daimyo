@@ -24,3 +24,6 @@ ui_halogen_todo_simple:
 
 ui_halogen_list:
 	./bin/build_main.sh all_ui_halogen_list.js Daimyo.UI.Halogen.List uiHalogenListMain
+
+ui_halogen_set:
+	./bin/build_main.sh all_ui_halogen_set.js Daimyo.UI.Halogen.Set uiHalogenSetMain

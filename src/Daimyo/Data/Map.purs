@@ -5,7 +5,7 @@ import Data.Array
 import Data.Tuple
 import qualified Data.Map as M
 
-import Daimyo.Data.List
+import Daimyo.Data.ArrayList
 
 -- | toArray
 --

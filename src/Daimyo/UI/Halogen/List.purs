@@ -42,8 +42,7 @@ import Routing
 
 import Daimyo.UI.Shared
 import Daimyo.Control.Monad
-import Daimyo.Data.Array
-import Daimyo.Data.List
+import Daimyo.Data.ArrayList
 
 data AppList = AppList (L.List String) (Maybe String) Mode
 
@@ -113,6 +112,7 @@ ui = render <$> stateful (AppList L.Nil Nothing ModeNormal) update
 handleNewValue :: forall eff. String -> E.Event (HalogenEffects eff) Input
 handleNewValue s = E.yield (OpAddToList s) `E.andThen` const (return OpClearInput)
 
+handleModeChange :: String -> Mode
 handleModeChange "reverse" = ModeReverse
 handleModeChange "sort"    = ModeSort
 handleModeChange "nub"     = ModeNub

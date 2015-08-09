@@ -38,20 +38,19 @@ import qualified Halogen.HTML.Events.Types as T
 import qualified Data.Set as S
 
 import Daimyo.UI.Shared
+import Daimyo.Data.ArrayList
 
 data AppSet = AppSet (S.Set String) (Maybe String)
 
 data Input
   = OpAddToSet String
   | OpClearSet
-  | OpNoOp
+  | OpNop
 
 -- | ui
 --
 ui :: forall eff. Component (E.Event (HalogenEffects eff)) Input Input
 ui = render <$> stateful (AppSet S.empty Nothing) update
---  r <- stateful (AppSet S.empty Nothing) update
---  render r
   where
   render :: AppSet -> H.HTML (E.Event (HalogenEffects eff) Input)
   render (AppSet app inp) = appLayout
@@ -59,19 +58,30 @@ ui = render <$> stateful (AppSet S.empty Nothing) update
     appLayout =
       H.section [] [
         H.header [] [
-          H.h1_ [H.text "List"],
+          H.h1_ [H.text "Set"],
           H.input [
             A.placeholder "value",
             maybe (A.value "") A.value inp,
-            A.onValueChanged (\x -> pure (handleNewValue x))] []
+            A.onValueChanged (pure <<< handleNewValue)
+          ] [],
+          H.p_ [displaySet]
         ]
       ]
 
+    -- | displaySet
+    displaySet =
+      H.ul_ (map setItem $ listToArray $ S.toList app)
+
+    -- | setItem
+    setItem item = H.li_ [H.text item]
+
   update :: AppSet -> Input -> AppSet
-  update (AppSet set s) OpClearSet = AppSet set s
+  update (AppSet set s) OpClearSet     = AppSet set s
+  update (AppSet set s) (OpAddToSet v) = AppSet (S.insert v set) s
+  update st             OpNop          = st
 
 handleNewValue :: forall eff. String -> E.Event (HalogenEffects eff) Input
-handleNewValue s = return OpNoOp
+handleNewValue s = return $ OpAddToSet s
 
 uiHalogenSetMain = do
   Tuple node driver <- runUI ui
