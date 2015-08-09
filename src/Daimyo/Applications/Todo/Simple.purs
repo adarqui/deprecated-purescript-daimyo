@@ -191,6 +191,12 @@ updateTodo tid todo = do
 findTodoById :: forall eff a. TodoId -> TodoAppState (Maybe Todo)
 findTodoById tid = gets (M.lookup tid <<< todoAppTodos)
 
+-- | toggleTodoState
+--
+toggleTodoState :: TodoState -> TodoState
+toggleTodoState Active    = Completed
+toggleTodoState Completed = Active
+
 -- | defaultTodo
 --
 defaultTodo :: String -> Todo

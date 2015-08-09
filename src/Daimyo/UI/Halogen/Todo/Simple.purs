@@ -55,16 +55,17 @@ import Daimyo.UI.Shared
 import qualified Daimyo.Data.Map as M
 import qualified Data.Map as M
 
-data AppState = AppState TodoApp (Maybe String) TodoView
+data AppState = AppState TodoApp (Maybe String) TodoView UIMode
 
 data Input
   = OpListTodos (Array Todo)
   | OpAddTodo Todo
   | OpRemoveTodo TodoId
+  | OpUpdateTodo TodoId Todo
   | OpClearTodos
-  | OpClearCompletedTodos
   | OpClearInput
   | OpSetView TodoView
+  | OpSetMode UIMode
   | OpNop
   | OpBusy
 
@@ -73,13 +74,28 @@ data TodoView
   | ViewActive
   | ViewCompleted
 
+data UIMode
+  = ModeView
+  | ModeEdit TodoId
+
+instance uimodeEq :: Eq UIMode where
+  eq ModeView ModeView           = true
+  eq (ModeEdit t1) (ModeEdit t2) = t1 == t2
+  eq _             _             = false
+
+instance todoviewEq :: Eq TodoView where
+  eq ViewAll ViewAll             = true
+  eq ViewActive ViewActive       = true
+  eq ViewCompleted ViewCompleted = true
+  eq _             _             = false
+
 -- | ui
 --
 ui :: forall eff. Component (E.Event (HalogenEffects (ajax :: AJAX | eff))) Input Input
-ui = render <$> stateful (AppState newTodoApp Nothing ViewAll) update
+ui = render <$> stateful (AppState newTodoApp Nothing ViewAll ModeView) update
   where
   render :: AppState -> H.HTML (E.Event (HalogenEffects (ajax :: AJAX | eff)) Input)
-  render (AppState app inp view) = appLayout
+  render (AppState app inp view mode) = appLayout
     where
     appLayout =
       H.section [class_ "todoapp"] [
@@ -94,11 +110,11 @@ ui = render <$> stateful (AppState newTodoApp Nothing ViewAll) update
         ],
         H.section [class_ "main"] [
           H.input [class_ "toggle-all", A.type_ "checkbox"] [H.label_ [H.text "Mark all as complete"]],
-          H.ul [class_ "todo-list"] $ map todoListItem (map snd $ M.toArray $ todoAppTodos app),
+          H.ul [class_ "todo-list"] $ map todoListItem (todosFilter $ map snd $ M.toArray $ todoAppTodos app),
           H.footer [class_ "footer"] [
             H.span [class_ "todo-count"] [H.strong_ [H.text $ show $ todosActiveLength (map snd $ M.toArray $ todoAppTodos app)], H.text " items left"],
             H.ul [class_ "filters"] [
-              H.li_ [H.a [A.href "#"] [H.text "all"]],
+              H.li_ [H.a [A.href "#"] [H.text "All"]],
               H.li_ [H.a [A.href "#active"] [H.text "Active"]],
               H.li_ [H.a [A.href "#completed"] [H.text "Completed"]]
             ],
@@ -112,25 +128,39 @@ ui = render <$> stateful (AppState newTodoApp Nothing ViewAll) update
         ]
       ]
 
-  todoListItem (Todo{todoId=tid, todoTitle=title, todoState=state}) =
-    H.li [if state == Completed then class_ "completed" else class_ "active"] [
-      H.div [class_ "view"] [
-        H.input [class_ "toggle", A.type_ "checkbox", A.checked (state == Completed)] [],
-        H.label_ [H.text title],
-        H.button [class_ "destroy", A.onClick (\_ -> pure (handleRemoveTodo tid))] []
-      ],
-      H.input [class_ "edit", A.value title] []
-    ]
+    todosFilter :: Array Todo -> Array Todo
+    todosFilter todos
+      | view == ViewAll       = todos
+      | view == ViewActive    = filter (\(Todo todo) -> todo.todoState == Active)    todos
+      | view == ViewCompleted = filter (\(Todo todo) -> todo.todoState == Completed) todos
+
+    todoListItem (todo@Todo{todoId=tid, todoTitle=title, todoState=state}) =
+      let v = H.label [A.onClick (\_ -> pure $ return $ OpSetMode (ModeEdit tid))] [H.text title] in
+      H.li [if state == Completed then class_ "completed" else class_ "active"] [
+        H.div [class_ "view"] [
+          H.input [class_ "toggle", A.type_ "checkbox", A.checked (state == Completed), A.onChange (\_ -> pure (handleUpdateTodo tid title (toggleTodoState state)))] [],
+          case mode of
+             ModeView      -> v
+             ModeEdit tid' ->
+              if tid /= tid'
+                 then v
+                 else H.input [ class_ "new-todo", A.value title, A.onValueChanged (\x -> pure (handleUpdateTodo tid x state)), A.onFocusOut (\_ -> pure (return $ OpSetMode ModeView)) ] [],
+          H.button [class_ "destroy", A.onClick (\_ -> pure (handleRemoveTodo tid))] []
+        ],
+        H.input [class_ "edit", A.value title] []
+      ]
 
   update :: AppState -> Input -> AppState
-  update (AppState app inp view) (OpListTodos xs)   = AppState (execState (clearTodos >> mapM addTodoDirectly xs) app) inp view
-  update (AppState app inp view) (OpAddTodo todo)   = AppState (execState (addTodoDirectly todo) app) inp view
-  update (AppState app inp view) (OpRemoveTodo tid) = AppState (execState (removeTodo tid) app) inp view
-  update (AppState app inp view) OpClearTodos       = AppState (execState (clearTodos) app) inp view
-  update (AppState app _ view)   OpClearInput       = AppState app Nothing view
-  update (AppState app inp view) (OpSetView view')  = AppState app inp view'
-  update st OpNop                                   = st
-  update st OpBusy                                  = st
+  update (AppState app inp view mode) (OpListTodos xs)        = AppState (execState (clearTodos >> mapM addTodoDirectly xs) app) inp view mode
+  update (AppState app inp view mode) (OpAddTodo todo)        = AppState (execState (addTodoDirectly todo) app) inp view mode
+  update (AppState app inp view mode) (OpRemoveTodo tid)      = AppState (execState (removeTodo tid) app) inp view mode
+  update (AppState app inp view mode) (OpUpdateTodo tid todo) = AppState (execState (updateTodo tid todo) app) inp view mode
+  update (AppState app inp view mode) OpClearTodos            = AppState (execState (clearTodos) app) inp view mode
+  update (AppState app _ view mode)   OpClearInput            = AppState app Nothing view mode
+  update (AppState app inp view mode) (OpSetView view')       = AppState app inp view' mode
+  update (AppState app inp view _)    (OpSetMode mode)        = AppState app inp view mode
+  update st OpNop                                             = st
+  update st OpBusy                                            = st
 
 todosActiveLength :: Array Todo -> Int
 todosActiveLength = length <<< todosActive
@@ -150,10 +180,11 @@ handleAddTodo todo = E.yield OpClearInput `E.andThen` \_ -> E.yield OpBusy `E.an
 handleRemoveTodo :: forall eff. TodoId -> E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
 handleRemoveTodo tid = E.yield OpBusy `E.andThen` \_ -> E.async (affRemoveTodo tid)
 
+handleUpdateTodo :: forall eff. TodoId -> String -> TodoState -> E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
+handleUpdateTodo tid title state = E.yield OpBusy `E.andThen` \_ -> E.async (affUpdateTodo (Todo{todoId: tid, todoTitle: title, todoState: state})) `E.andThen` \_ -> return $ OpSetMode ModeView
+
 handleClearCompleted :: forall eff. Array Todo -> E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
 handleClearCompleted todos = go (filter (\(Todo todo) -> todo.todoState == Completed) todos)
---  _ <- mapM_ (\(Todo todo) -> handleRemoveTodo (todo.todoId)) todos
---  return OpNop
   where
   go xs = do
     case (uncons xs) of
@@ -163,13 +194,11 @@ handleClearCompleted todos = go (filter (\(Todo todo) -> todo.todoState == Compl
 
 affListTodos = do
   res <- get "/applications/simple/todos"
-  liftEff $ log res.response
   let todos = decode res.response :: Maybe (Array Todo)
   return $ OpListTodos (fromMaybe [] todos)
 
 affAddTodo todo = do
   res <- affjax $ defaultRequest { method = POST, url = "/applications/simple/todos", content = Just (encode (todo :: Todo)), headers = [ContentType applicationJSON] }
-  liftEff $ log res.response
   let todo' = decode res.response :: Maybe Todo
   return $ case todo' of
                 Nothing   -> OpNop
@@ -177,12 +206,19 @@ affAddTodo todo = do
 
 affRemoveTodo tid = do
   res <- delete ("/applications/simple/todos/" ++ show (tid :: TodoId))
-  liftEff $ log res.response
   let tid = decode res.response :: Maybe TodoId
   return $ case tid of
                 Nothing   -> OpNop
                 Just tid' -> OpRemoveTodo tid'
 
+affUpdateTodo todo@Todo{todoId: tid, todoTitle: title, todoState: state} = do
+  res <- affjax $ defaultRequest { method = PUT, url = ("/applications/simple/todos/" ++ show tid), content = Just (encode (todo :: Todo)), headers = [ContentType applicationJSON] }
+  let todo' = decode res.response :: Maybe Todo
+  return $ case todo' of
+                Nothing    -> OpNop
+                Just todo' -> OpUpdateTodo tid todo'
+
+handleViewChange :: String -> TodoView
 handleViewChange "active"    = ViewActive
 handleViewChange "completed" = ViewCompleted
 handleViewChange _           = ViewAll
