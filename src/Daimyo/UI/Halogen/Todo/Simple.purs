@@ -222,12 +222,14 @@ handleClearCompleted = go
          Just { head: (Todo h), tail: t } -> do
            E.async (affRemoveTodo h.todoId) `E.andThen` (const $ handleClearCompleted t)
 
+affListTodos :: forall eff. Aff (ajax :: AJAX | eff) Input
 affListTodos = do
   res <- get "/applications/simple/todos"
   return $ maybe OpNop OpListTodos (decode res.response)
 
+affAddTodo :: forall eff. Todo -> Aff (ajax :: AJAX | eff) Input
 affAddTodo todo = do
-  res <- affjax $ defaultRequest { method = POST, url = "/applications/simple/todos", content = Just (encode (todo :: Todo)), headers = [ContentType applicationJSON] }
+  res <- affjax $ defaultRequest { method = POST, url = "/applications/simple/todos", content = Just (encode todo), headers = [ContentType applicationJSON] }
   return $ maybe OpNop OpAddTodo (decode res.response)
 
 affRemoveTodo :: forall eff. TodoId -> Aff (ajax :: AJAX | eff) Input
@@ -235,6 +237,7 @@ affRemoveTodo tid = do
   res <- delete ("/applications/simple/todos/" ++ show tid)
   return $ maybe OpNop OpRemoveTodo (decode res.response)
 
+affUpdateTodo :: forall eff. Todo -> Aff (ajax :: AJAX | eff) Input
 affUpdateTodo todo@Todo{todoId: tid, todoTitle: title, todoState: state} = do
   res <- affjax $ defaultRequest { method = PUT, url = ("/applications/simple/todos/" ++ show tid), content = Just (encode todo), headers = [ContentType applicationJSON] }
   return $ maybe OpNop (OpUpdateTodo tid) (decode res.response)
