@@ -97,44 +97,70 @@ ui = render <$> stateful (AppState newTodoApp Nothing ViewAll ModeView) update
   render :: AppState -> H.HTML (E.Event (HalogenEffects (ajax :: AJAX | eff)) Input)
   render (AppState app inp view mode) = appLayout
     where
+    -- | run
+    -- Helper to run our state todo commands.
+    --
     run commands = evalState commands app
+
+    -- | appLayout
+    -- The full todo app layout, from head to toe.
+    --
     appLayout =
-      H.section [class_ "todoapp"] [
-        H.header [class_ "header"] [
-          H.h1_ [H.text "todos"],
-          H.input [
-            class_ "new-todo",
-            A.placeholder "What needs to be done?",
-            maybe (A.value "") A.value inp,
-              A.onValueChanged (pure <<< handleNewTodo)
-          ] []
-        ],
-        H.section [class_ "main"] [
-          H.input [class_ "toggle-all", A.type_ "checkbox"] [H.label_ [H.text "Mark all as complete"]],
-          H.ul [class_ "todo-list"] $ map todoListItem todosFilter,
-          H.footer [class_ "footer"] [
-            H.span [class_ "todo-count"] [H.strong_ [H.text $ show $ length $ run listActiveTodos], H.text " items left"],
-            H.ul [class_ "filters"] [
-              H.li_ [H.a [A.href "#"] [H.text "All"]],
-              H.li_ [H.a [A.href "#active"] [H.text "Active"]],
-              H.li_ [H.a [A.href "#completed"] [H.text "Completed"]]
-            ],
-            H.button [class_ "clear-completed", A.onClick (const $ pure (handleClearCompleted $ run listCompletedTodos))] [H.text "Clear completed"]
-          ]
-        ],
-        H.footer [class_ "info"] [
-          H.p_ [H.text "Double-click to edit a todo"],
-          H.p_ [H.text "Created by ", H.a [A.href "https://github.com/adarqui/"] [H.text "adarqui"]],
-          H.p_ [H.text "Part of ", H.a [A.href "http://todomvc.com"] [H.text "TodoMVC"]]
+      H.section [class_ "todoapp"] [headerAndInput, todoListAndRoutes, footer]
+
+    -- | headerAndInput
+    -- The header includes our input field for adding new todos
+    --
+    headerAndInput =
+      H.header [class_ "header"] [
+        H.h1_ [H.text "todos"],
+        H.input [
+          class_ "new-todo",
+          A.placeholder "What needs to be done?",
+          maybe (A.value "") A.value inp,
+            A.onValueChanged (pure <<< handleNewTodo)
+        ] []
+      ]
+
+    -- | todoListAndRoutes
+    -- The actual todo list, consisting of active & completed todos. Also contains the hashtag routes for active/completed todos.
+    --
+    todoListAndRoutes =
+      H.section [class_ "main"] [
+        H.input [class_ "toggle-all", A.type_ "checkbox"] [H.label_ [H.text "Mark all as complete"]],
+        H.ul [class_ "todo-list"] $ map todoListItem todosFilter,
+        H.footer [class_ "footer"] [
+          H.span [class_ "todo-count"] [H.strong_ [H.text $ show $ length $ run listActiveTodos], H.text " items left"],
+          H.ul [class_ "filters"] [
+            H.li_ [H.a [A.href "#"] [H.text "All"]],
+            H.li_ [H.a [A.href "#active"] [H.text "Active"]],
+            H.li_ [H.a [A.href "#completed"] [H.text "Completed"]]
+          ],
+          H.button [class_ "clear-completed", A.onClick (const $ pure (handleClearCompleted $ run listCompletedTodos))] [H.text "Clear completed"]
         ]
       ]
 
+    -- | footer
+    --
+    footer =
+      H.footer [class_ "info"] [
+        H.p_ [H.text "Double-click to edit a todo"],
+        H.p_ [H.text "Created by ", H.a [A.href "https://github.com/adarqui/"] [H.text "adarqui"]],
+        H.p_ [H.text "Part of ", H.a [A.href "http://todomvc.com"] [H.text "TodoMVC"]]
+      ]
+
+    -- | todosFilter
+    -- Filters the todo list based on the hash routes.
+    --
     todosFilter :: Array Todo
     todosFilter
       | view == ViewAll       = run listTodos
       | view == ViewActive    = run listActiveTodos
       | view == ViewCompleted = run listCompletedTodos
 
+    -- | todoListItem
+    -- A todo list item and all it's glory: remove, update, toggle completed, etc.
+    --
     todoListItem (todo@Todo{todoId=tid, todoTitle=title, todoState=state}) =
       let v = H.label [A.onClick (const $ pure $ return $ OpSetMode (ModeEdit tid))] [H.text title] in
       H.li [if state == Completed then class_ "completed" else class_ "active"] [
@@ -151,6 +177,8 @@ ui = render <$> stateful (AppState newTodoApp Nothing ViewAll ModeView) update
         H.input [class_ "edit", A.value title] []
       ]
 
+  -- | update
+  -- Contains all of the states of our application.
   update :: AppState -> Input -> AppState
   update (AppState app inp view mode) (OpListTodos xs)        = AppState (execState (clearTodos >> mapM addTodoDirectly xs) app) inp view mode
   update (AppState app inp view mode) (OpAddTodo todo)        = AppState (execState (addTodoDirectly todo) app) inp view mode
@@ -172,14 +200,10 @@ handleListTodos :: forall eff. E.Event (HalogenEffects (ajax :: AJAX | eff)) Inp
 handleListTodos = E.async affListTodos
 
 handleNewTodo :: forall eff. String -> E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
-handleNewTodo s =
-  E.yield OpClearInput `E.andThen`
-  (const $ handleAddTodo $ defaultTodo s)
+handleNewTodo s = E.yield OpClearInput `E.andThen` (const $ handleAddTodo $ defaultTodo s)
 
 handleAddTodo :: forall eff. Todo -> E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
-handleAddTodo todo =
-  E.yield OpClearInput `E.andThen`
-  (const $ E.async (affAddTodo todo))
+handleAddTodo todo = E.yield OpClearInput `E.andThen` (const $ E.async (affAddTodo todo))
 
 handleRemoveTodo :: forall eff. TodoId -> E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
 handleRemoveTodo = E.async <<< affRemoveTodo
@@ -211,7 +235,7 @@ affRemoveTodo tid = do
   return $ maybe OpNop OpRemoveTodo (decode res.response)
 
 affUpdateTodo todo@Todo{todoId: tid, todoTitle: title, todoState: state} = do
-  res <- affjax $ defaultRequest { method = PUT, url = ("/applications/simple/todos/" ++ show tid), content = Just (encode (todo :: Todo)), headers = [ContentType applicationJSON] }
+  res <- affjax $ defaultRequest { method = PUT, url = ("/applications/simple/todos/" ++ show tid), content = Just (encode todo), headers = [ContentType applicationJSON] }
   return $ maybe OpNop (OpUpdateTodo tid) (decode res.response)
 
 uiHalogenTodoSimpleMain = do
