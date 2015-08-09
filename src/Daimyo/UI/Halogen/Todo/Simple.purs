@@ -145,7 +145,7 @@ ui = render <$> stateful (AppState newTodoApp Nothing ViewAll ModeView) update
              ModeEdit tid' ->
               if tid /= tid'
                  then v
-                 else H.input [ class_ "new-todo", A.value title, A.onValueChanged (\x -> pure (handleUpdateTodo tid x state)), A.onFocusOut (const $> pure (return $ OpSetMode ModeView)) ] [],
+                 else H.input [ class_ "new-todo", A.value title, A.onValueChanged (\x -> pure (handleUpdateTodo tid x state)), A.onFocusOut (const $ pure (return $ OpSetMode ModeView)) ] [],
           H.button [class_ "destroy", A.onClick (const $ pure (handleRemoveTodo tid))] []
         ],
         H.input [class_ "edit", A.value title] []
@@ -162,12 +162,6 @@ ui = render <$> stateful (AppState newTodoApp Nothing ViewAll ModeView) update
   update (AppState app inp view _)    (OpSetMode mode)        = AppState app inp view mode
   update st OpNop                                             = st
   update st OpBusy                                            = st
-
-todosActiveLength :: Array Todo -> Int
-todosActiveLength = length <<< todosActive
-
-todosActive :: Array Todo -> Array Todo
-todosActive todos = filter (\(Todo{ todoState = state}) -> state == Active) todos
 
 handleListTodos :: forall eff. E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
 handleListTodos = E.yield OpBusy `E.andThen` \_ -> E.async affListTodos
