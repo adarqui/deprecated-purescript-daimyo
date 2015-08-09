@@ -54,21 +54,21 @@ data Input a
 
 -- | ui
 --
-ui :: forall a eff. (Ord a, Show a) => (String -> a) -> Component (E.Event (HalogenEffects eff)) (Input a) (Input a)
-ui read = render <$> stateful (AppSet S.empty Nothing) update
+ui :: forall a i eff. (Ord a, Show a) => (String -> a) -> Array (A.Attr i) ->  Component (E.Event (HalogenEffects eff)) (Input a) (Input a)
+ui read attributes = render <$> stateful (AppSet S.empty Nothing) update
   where
-  render :: forall a. (Ord a, Show a) => AppSet a -> H.HTML (E.Event (HalogenEffects eff) (Input a))
+  render :: forall a i. (Ord a, Show a) => AppSet a -> H.HTML (E.Event (HalogenEffects eff) (Input a))
   render (AppSet app inp) = appLayout
     where
     appLayout =
       H.section [] [
         H.header [] [
           H.h1_ [H.text "Set"],
-          H.input [
+          H.input (attributes ++ [
             A.placeholder "value",
             maybe (A.value "") A.value inp,
             A.onValueChanged (pure <<< handleNewValue <<< read)
-          ] [],
+          ]) [],
           H.p_ [displaySet]
         ]
       ]
@@ -89,5 +89,5 @@ handleNewValue :: forall a eff. (Ord a, Show a) => a -> E.Event (HalogenEffects 
 handleNewValue x = return $ OpAddToSet x
 
 uiHalogenSetMain = do
-  Tuple node driver <- runUI $ ui readFloat
+  Tuple node driver <- runUI $ ui readFloat [A.type_ "number"]
   appendToBody node
