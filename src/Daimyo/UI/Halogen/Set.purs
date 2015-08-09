@@ -37,22 +37,24 @@ import qualified Halogen.HTML.Events.Types as T
 
 import qualified Data.Set as S
 
+import Data.Foreign.Class
+
 import Daimyo.UI.Shared
 import Daimyo.Data.ArrayList
 
-data AppSet = AppSet (S.Set String) (Maybe String)
+data AppSet a = AppSet (S.Set a) (Maybe String)
 
-data Input
-  = OpAddToSet String
+data Input a
+  = OpAddToSet a
   | OpClearSet
   | OpNop
 
 -- | ui
 --
-ui :: forall eff. Component (E.Event (HalogenEffects eff)) Input Input
-ui = render <$> stateful (AppSet S.empty Nothing) update
+ui :: forall a eff. (Ord a, Show a, IsForeign a) => a -> Component (E.Event (HalogenEffects eff)) (Input a) (Input a)
+ui _ = render <$> stateful (AppSet S.empty Nothing) update
   where
-  render :: AppSet -> H.HTML (E.Event (HalogenEffects eff) Input)
+  render :: forall a. (Ord a, Show a, IsForeign a) => AppSet a -> H.HTML (E.Event (HalogenEffects eff) (Input a))
   render (AppSet app inp) = appLayout
     where
     appLayout =
@@ -73,16 +75,16 @@ ui = render <$> stateful (AppSet S.empty Nothing) update
       H.ul_ (map setItem $ listToArray $ S.toList app)
 
     -- | setItem
-    setItem item = H.li_ [H.text item]
+    setItem item = H.li_ [H.text $ show item]
 
-  update :: AppSet -> Input -> AppSet
+  update :: forall a. (Ord a, Show a, IsForeign a) => AppSet a -> Input a -> AppSet a
   update (AppSet set s) OpClearSet     = AppSet set s
   update (AppSet set s) (OpAddToSet v) = AppSet (S.insert v set) s
   update st             OpNop          = st
 
-handleNewValue :: forall eff. String -> E.Event (HalogenEffects eff) Input
-handleNewValue s = return $ OpAddToSet s
+handleNewValue :: forall a eff. (Ord a, Show a, IsForeign a) => a -> E.Event (HalogenEffects eff) (Input a)
+handleNewValue x = return $ OpAddToSet x
 
 uiHalogenSetMain = do
-  Tuple node driver <- runUI ui
+  Tuple node driver <- runUI (ui (1.0 :: Number))
   appendToBody node
