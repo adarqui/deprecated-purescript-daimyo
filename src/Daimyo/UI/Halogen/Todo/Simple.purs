@@ -163,6 +163,11 @@ ui = render <$> stateful (AppState newTodoApp Nothing ViewAll ModeView) update
   update st OpNop                                             = st
   update st OpBusy                                            = st
 
+handleViewChange :: String -> TodoView
+handleViewChange "active"    = ViewActive
+handleViewChange "completed" = ViewCompleted
+handleViewChange _           = ViewAll
+
 handleListTodos :: forall eff. E.Event (HalogenEffects (ajax :: AJAX | eff)) Input
 handleListTodos = E.async affListTodos
 
@@ -195,34 +200,19 @@ handleClearCompleted = go
 
 affListTodos = do
   res <- get "/applications/simple/todos"
-  let todos = decode res.response :: Maybe (Array Todo)
-  return $ OpListTodos (fromMaybe [] todos)
+  return $ maybe OpNop OpListTodos (decode res.response)
 
 affAddTodo todo = do
   res <- affjax $ defaultRequest { method = POST, url = "/applications/simple/todos", content = Just (encode (todo :: Todo)), headers = [ContentType applicationJSON] }
-  let todo' = decode res.response :: Maybe Todo
-  return $ case todo' of
-                Nothing   -> OpNop
-                Just v    -> OpAddTodo v
+  return $ maybe OpNop OpAddTodo (decode res.response)
 
 affRemoveTodo tid = do
   res <- delete ("/applications/simple/todos/" ++ show (tid :: TodoId))
-  let tid = decode res.response :: Maybe TodoId
-  return $ case tid of
-                Nothing   -> OpNop
-                Just tid' -> OpRemoveTodo tid'
+  return $ maybe OpNop OpRemoveTodo (decode res.response)
 
 affUpdateTodo todo@Todo{todoId: tid, todoTitle: title, todoState: state} = do
   res <- affjax $ defaultRequest { method = PUT, url = ("/applications/simple/todos/" ++ show tid), content = Just (encode (todo :: Todo)), headers = [ContentType applicationJSON] }
-  let todo' = decode res.response :: Maybe Todo
-  return $ case todo' of
-                Nothing    -> OpNop
-                Just todo' -> OpUpdateTodo tid todo'
-
-handleViewChange :: String -> TodoView
-handleViewChange "active"    = ViewActive
-handleViewChange "completed" = ViewCompleted
-handleViewChange _           = ViewAll
+  return $ maybe OpNop (OpUpdateTodo tid) (decode res.response)
 
 uiHalogenTodoSimpleMain = do
   Tuple node driver <- runUI ui
