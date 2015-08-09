@@ -243,5 +243,4 @@ uiHalogenTodoSimpleMain = do
   appendToBody node
   runAff throwException driver affListTodos
   hashChanged (\from to -> do
-              runAff throwException driver $ do
-                return $ (OpSetView $ handleViewChange to))
+              runAff throwException driver (return $ (OpSetView $ handleViewChange to)))
