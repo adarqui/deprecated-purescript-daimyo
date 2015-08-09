@@ -230,8 +230,9 @@ affAddTodo todo = do
   res <- affjax $ defaultRequest { method = POST, url = "/applications/simple/todos", content = Just (encode (todo :: Todo)), headers = [ContentType applicationJSON] }
   return $ maybe OpNop OpAddTodo (decode res.response)
 
+affRemoveTodo :: forall eff. TodoId -> Aff (ajax :: AJAX | eff) Input
 affRemoveTodo tid = do
-  res <- delete ("/applications/simple/todos/" ++ show (tid :: TodoId))
+  res <- delete ("/applications/simple/todos/" ++ show tid)
   return $ maybe OpNop OpRemoveTodo (decode res.response)
 
 affUpdateTodo todo@Todo{todoId: tid, todoTitle: title, todoState: state} = do
