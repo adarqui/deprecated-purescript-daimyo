@@ -3,8 +3,11 @@ module Daimyo.Data.Map (
   elems,
   indices,
   filterElems,
+  filterElems',
   filterIndices,
-  filter
+  filterIndices',
+  filter,
+  filter'
 ) where
 
 import Prelude
@@ -37,8 +40,8 @@ filterElems f = filter (const f)
 
 -- | filterElems'
 --
--- filterElems' :: forall k v. (v -> Boolean) -> M.Map k v -> L.List v
--- filterElems' = map snd <<< filterElems
+filterElems' :: forall k v. (v -> Boolean) -> M.Map k v -> L.List v
+filterElems' f m = map snd $ filterElems f m
 
 -- | filterIndices
 --
@@ -47,8 +50,8 @@ filterIndices f = filter (\k v -> f k)
 
 -- | filterIndices'
 --
--- filterIndices' :: forall k v. (k -> Boolean) -> M.Map k v -> L.List v
--- filterIndices' = map snd <<< filterIndices
+filterIndices' :: forall k v. (k -> Boolean) -> M.Map k v -> L.List v
+filterIndices' f m = map snd $ filterIndices f m
 
 -- | filter
 --
@@ -57,5 +60,5 @@ filter f = L.filter (uncurry f) <<< M.toList
 
 -- | filter'
 --
--- filter' :: forall k v. (k -> v -> Boolean) -> M.Map k v -> L.List v
--- filter' = map snd <<< filter
+filter' :: forall k v. (k -> v -> Boolean) -> M.Map k v -> L.List v
+filter' f m = map snd $ filter f m
