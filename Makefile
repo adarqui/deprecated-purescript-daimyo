@@ -27,3 +27,6 @@ ui_halogen_list:
 
 ui_halogen_set:
 	./bin/build_main.sh all_ui_halogen_set.js Daimyo.UI.Halogen.Set uiHalogenSetMain
+
+ui_halogen_select:
+	./bin/build_main.sh all_ui_halogen_select.js Daimyo.UI.Halogen.Select uiHalogenSelectMain

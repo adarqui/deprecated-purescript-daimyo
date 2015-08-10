@@ -1,6 +1,4 @@
-module Daimyo.UI.Halogen.Set (
-  uiHalogenSetMain
-) where
+module Daimyo.UI.Halogen.Set where
 
 import Prelude
 import Data.Maybe
@@ -52,6 +50,7 @@ data Input a
   | OpClearSet
   | OpNop
 
+{-
 -- | ui
 --
 ui :: forall a i eff. (Ord a, Show a) => (String -> a) -> Array (A.Attr i) ->  Component (E.Event (HalogenEffects eff)) (Input a) (Input a)
@@ -91,3 +90,4 @@ handleNewValue x = return $ OpAddToSet x
 uiHalogenSetMain = do
   Tuple node driver <- runUI $ ui readFloat [A.type_ "number"]
   appendToBody node
+-}
