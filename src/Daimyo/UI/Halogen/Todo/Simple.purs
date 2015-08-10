@@ -50,6 +50,7 @@ import Network.HTTP.RequestHeader
 import Routing
 
 import Daimyo.Control.Monad
+import Daimyo.Control.Monad.Array
 import Daimyo.Applications.Todo.Simple
 import Daimyo.UI.Shared
 import qualified Daimyo.Data.Map as M

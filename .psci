@@ -1,15 +1,21 @@
 :load src/Daimyo/API/Ping.purs
 :load src/Daimyo/Applications/Todo/Simple.purs
 :load src/Daimyo/Control/Monad.purs
+:load src/Daimyo/Control/Monad/Array.purs
+:load src/Daimyo/Control/Monad/List.purs
 :load src/Daimyo/Data/Array.purs
+:load src/Daimyo/Data/ArrayList.purs
 :load src/Daimyo/Data/List.purs
+:load src/Daimyo/Data/List/Shuffle.purs
 :load src/Daimyo/Data/Map.purs
+:load src/Daimyo/Data/Set.purs
 :load src/Daimyo/Hello.purs
 :load src/Daimyo/Misc/State.purs
 :load src/Daimyo/NumberTheory/Factorial.purs
 :load src/Daimyo/Random/Xorshift/Xorshift64.purs
 :load src/Daimyo/UI/Halogen/List.purs
 :load src/Daimyo/UI/Halogen/Ping.purs
+:load src/Daimyo/UI/Halogen/Select.purs
 :load src/Daimyo/UI/Halogen/Set.purs
 :load src/Daimyo/UI/Halogen/Todo/Simple.purs
 :load src/Daimyo/UI/Shared.purs
@@ -159,6 +165,7 @@
 :load bower_components/purescript-profunctor/src/Data/Profunctor.purs
 :load bower_components/purescript-profunctor/src/Data/Profunctor/Choice.purs
 :load bower_components/purescript-profunctor/src/Data/Profunctor/Strong.purs
+:load bower_components/purescript-random/src/Control/Monad/Eff/Random.purs
 :load bower_components/purescript-refs/src/Control/Monad/Eff/Ref.purs
 :load bower_components/purescript-refs/src/Control/Monad/Eff/Ref/Unsafe.purs
 :load bower_components/purescript-routing/src/Routing.purs
@@ -293,6 +300,7 @@
 :foreign bower_components/purescript-maybe/src/Data/Maybe/Unsafe.js
 :foreign bower_components/purescript-nullable/src/Data/Nullable.js
 :foreign bower_components/purescript-prelude/src/Prelude.js
+:foreign bower_components/purescript-random/src/Control/Monad/Eff/Random.js
 :foreign bower_components/purescript-refs/src/Control/Monad/Eff/Ref.js
 :foreign bower_components/purescript-routing/src/Routing.js
 :foreign bower_components/purescript-routing/src/Routing/Hash.js
