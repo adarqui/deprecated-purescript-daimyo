@@ -10,6 +10,7 @@
 :load src/Daimyo/Data/List/Shuffle.purs
 :load src/Daimyo/Data/Map.purs
 :load src/Daimyo/Data/Set.purs
+:load src/Daimyo/Data/String.purs
 :load src/Daimyo/Hello.purs
 :load src/Daimyo/Math/Int.purs
 :load src/Daimyo/Misc/State.purs
