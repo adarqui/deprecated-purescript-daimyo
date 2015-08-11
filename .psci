@@ -12,6 +12,10 @@
 :load src/Daimyo/Hello.purs
 :load src/Daimyo/Misc/State.purs
 :load src/Daimyo/NumberTheory/Factorial.purs
+:load src/Daimyo/Random.purs
+:load src/Daimyo/Random/LCG.purs
+:load src/Daimyo/Random/LCG/BSD.purs
+:load src/Daimyo/Random/LCG/MS.purs
 :load src/Daimyo/Random/Xorshift/Xorshift64.purs
 :load src/Daimyo/UI/Halogen/List.purs
 :load src/Daimyo/UI/Halogen/Ping.purs
