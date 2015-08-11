@@ -31,8 +31,8 @@ shuffleEff xs = (map snd <<< sort) <$> mapM (\x -> randomInt 0 99999999 >>= \i -
 
 -- | shuffleLCG_BSD
 --
-shuffleLCG_BSD :: forall a. (Ord a) => List a -> List a
-shuffleLCG_BSD xs = xs
+shuffleLCG_BSD :: forall a. (Ord a) => Int -> List a -> List a
+shuffleLCG_BSD seed xs = map snd $ sort $ zip (lcgsBSD seed (length xs)) xs
 
 -- | shuffleLCG_MS
 --
