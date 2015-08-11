@@ -1,7 +1,9 @@
 module Daimyo.Data.Array.Shuffle (
   shuffleEff,
   shuffleLCG_BSD,
-  shuffleLCG_MS
+  shuffleLCG_MS,
+  pick1_BSD,
+  pick1_MS
 ) where
 
 import Prelude
@@ -11,6 +13,7 @@ import Control.Monad.State
 import Control.Monad.State.Class
 import Control.Monad.State.Trans
 import Data.Array
+import Data.Maybe
 import Data.Tuple
 
 import Daimyo.Control.Monad.Array
@@ -41,3 +44,13 @@ shuffleLCG_BSD seed xs = listToArray $ S.shuffleLCG_BSD seed (arrayToList xs)
 --
 shuffleLCG_MS :: forall a. (Ord a) => Int -> Array a -> Array a
 shuffleLCG_MS seed xs = listToArray $ S.shuffleLCG_MS seed (arrayToList xs)
+
+-- | pick1_BSD
+--
+pick1_BSD :: forall a. Int -> Array a -> Maybe a
+pick1_BSD seed xs = S.pick1_BSD seed (arrayToList xs)
+
+-- | pick1_MS
+--
+pick1_MS :: forall a. Int -> Array a -> Maybe a
+pick1_MS seed xs = S.pick1_MS seed (arrayToList xs)
