@@ -9,7 +9,6 @@ import Prelude
 import Data.List
 import Data.Maybe
 import Data.Tuple
-import Control.Monad
 
 mapM :: forall eff m a b. (Monad m, Applicative m) => (a -> m b) -> List a -> m (List b)
 mapM f xs = do
