@@ -1,6 +1,7 @@
 module Daimyo.Random.LCG.MS (
   lcgMS,
-  lcgsMS
+  lcgsMS,
+  runLCGMS
 ) where
 
 import Prelude
@@ -24,3 +25,8 @@ lcgMS = lcg (LCG 214013 2531011 twoPow31)
 --
 lcgsMS :: Int -> Int -> List Int
 lcgsMS seed n = evalState (replicateM n lcgMS) seed
+
+-- | runLCGMS
+--
+runLCGMS :: Int -> Int
+runLCGMS = evalState lcgMS

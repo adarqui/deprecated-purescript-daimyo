@@ -1,6 +1,7 @@
 module Daimyo.Random.LCG.BSD (
   lcgBSD,
-  lcgsBSD
+  lcgsBSD,
+  runLCGBSD
 ) where
 
 import Prelude
@@ -26,3 +27,11 @@ lcgBSD = lcg (LCG 1103515245 12345 twoPow31)
 --
 lcgsBSD :: Int -> Int -> List Int
 lcgsBSD seed n = evalState (replicateM n lcgBSD) seed
+
+-- | runLCGBSD
+--
+-- >>> > runLCGBSD 5
+-- 1222621274
+--
+runLCGBSD :: Int -> Int
+runLCGBSD = evalState lcgBSD
