@@ -19,6 +19,7 @@
 :load src/Daimyo/Random/LCG.purs
 :load src/Daimyo/Random/LCG/BSD.purs
 :load src/Daimyo/Random/LCG/MS.purs
+:load src/Daimyo/Random/Xorshift/Xorshift32.purs
 :load src/Daimyo/Random/Xorshift/Xorshift64.purs
 :load src/Daimyo/UI/Thermite/Factorial.purs
 :load src/Daimyo/UI/Thermite/Ping.purs
