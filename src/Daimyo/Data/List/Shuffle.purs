@@ -3,7 +3,8 @@ module Daimyo.Data.List.Shuffle (
   shuffleLCG_BSD,
   shuffleLCG_MS,
   pick1_BSD,
-  pick1_MS
+  pick1_MS,
+  pick1
 ) where
 
 import Prelude
@@ -56,3 +57,10 @@ pick1_MS :: forall a. Int -> List a -> Maybe a
 pick1_MS seed xs = xs !! r
   where
   r = abs $ (evalState lcgMS seed) `mod` (length xs)
+
+-- | pick1
+--
+pick1 :: forall a. Int -> List a -> Maybe a
+pick1 seed xs = xs !! r
+  where
+  r = abs seed `mod` length xs

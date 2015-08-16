@@ -3,7 +3,8 @@ module Daimyo.Data.Array.Shuffle (
   shuffleLCG_BSD,
   shuffleLCG_MS,
   pick1_BSD,
-  pick1_MS
+  pick1_MS,
+  pick1
 ) where
 
 import Prelude
@@ -54,3 +55,8 @@ pick1_BSD seed xs = S.pick1_BSD seed (arrayToList xs)
 --
 pick1_MS :: forall a. Int -> Array a -> Maybe a
 pick1_MS seed xs = S.pick1_MS seed (arrayToList xs)
+
+-- | pick1
+--
+pick1 :: forall a. Int -> Array a -> Maybe a
+pick1 seed xs = S.pick1 seed (arrayToList xs)
