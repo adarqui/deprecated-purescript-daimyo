@@ -20,6 +20,8 @@ data Xorshift32 = Xorshift32 Int
 
 type State32 = State Xorshift32 Int
 
+newtype Xorshift32T m a = Xorshift32T { runXorshift32 :: m a }
+
 -- | xorshift
 --
 -- >>> runState xorshift32 (Xorshift32 1)
