@@ -107,8 +107,8 @@ instance monadEffXorshift32T :: (Monad m, MonadEff eff m) => MonadEff eff (Xorsh
 class MonadXorshift32 m where
   seed :: forall a. (Int -> (Tuple a Int)) -> m a
 
-get :: forall m. (Monad m, MonadXorshift32 m) => m Int
-get = seed \n -> Tuple n n
+getSeed :: forall m. (Monad m, MonadXorshift32 m) => m Int
+getSeed = seed \n -> Tuple n n
 
 instance monadXorshift32Xorshift32T :: (Monad m) => MonadXorshift32 (Xorshift32T m) where
   seed f = Xorshift32T $ return <<< f
@@ -139,8 +139,8 @@ instance monadXorshift32WriterT :: (Monad m, Monoid w, MonadXorshift32 m) => Mon
 --
 t :: forall eff. Xorshift32T (Eff (console :: CONSOLE | eff)) String
 t = do
-  s1 <- get
+  s1 <- getSeed
   lift $ log (show s1)
-  s2 <- get
+  s2 <- getSeed
   lift $ log (show s2)
   return "hi"
