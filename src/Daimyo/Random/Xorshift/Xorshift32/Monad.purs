@@ -1,6 +1,7 @@
 module Daimyo.Random.Xorshift.Xorshift32.Monad where
 
 import Prelude
+import Data.Identity
 import Data.Monoid
 import Data.Tuple
 import Daimyo.Random.Xorshift.Xorshift32
@@ -28,6 +29,9 @@ runXorshift32T (Xorshift32T s) = s
 
 evalXorshift32T :: forall m a. (Apply m) => Xorshift32T m a -> Int -> m a
 evalXorshift32T m n = fst <$> runXorshift32T m n
+
+execXorshift32T :: forall m a. (Apply m) => Xorshift32T m a -> Int -> m Int
+execXorshift32T m n = snd <$> runXorshift32T m n
 
 -- | Functor
 --
@@ -144,3 +148,16 @@ t = do
   s2 <- getSeed
   lift $ log (show s2)
   return "hi"
+
+
+-- would name this Xorshift32 but.. already taken.. 'I' for identity
+type Xorshift32I = Xorshift32T Identity
+
+runXorshift32I :: forall a. Xorshift32I a -> Int -> Tuple a Int
+runXorshift32I m n = runIdentity $ runXorshift32T m n
+
+evalXorshift32I :: forall a. Xorshift32I a -> Int -> a
+evalXorshift32I m n = fst (runXorshift32I m n)
+
+execXorshift32I :: forall s a. Xorshift32I a -> Int -> Int
+execXorshift32I m n = snd (runXorshift32I m n)
