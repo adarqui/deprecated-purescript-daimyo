@@ -116,6 +116,9 @@ instance monadXorshift32Xorshift32T :: (Monad m) => MonadXorshift32 (Xorshift32T
 instance monadXorshift32Xorshift32T1 :: (Monad m, MonadXorshift32 m) => MonadXorshift32 (Xorshift32T m) where
   seed f = lift (seed f)
 
+instance monadXorshift32StateT :: (Monad m, MonadXorshift32 m) => MonadXorshift32 (StateT s m) where
+  seed f = lift (seed f)
+
 instance monadXorshift32ErrorT :: (Monad m, MonadXorshift32 m) => MonadXorshift32 (ErrorT e m) where
   seed f = lift (seed f)
 
