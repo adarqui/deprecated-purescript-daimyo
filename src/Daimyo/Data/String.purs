@@ -1,5 +1,7 @@
 module Daimyo.Data.String (
-  findAllOccurrences
+  findAllOccurrences,
+  splitOnce,
+  doubleSplit
 ) where
 
 import Prelude
@@ -35,3 +37,40 @@ findAllOccurrences s1 s2 = go L.Nil s2
                        else L.reverse (Tuple false a2 L.: acc)
          Just i  -> if i == 0 then go (Tuple true s1 L.: acc) (drop len a2)
                               else go ((Tuple true s1) L.: Tuple false (take i a2) L.: acc) (drop (i+len) a2)
+
+
+-- | splitOnce
+--
+-- >>> splitOnce "is the" "functional programming is the best"
+-- Just (Tuple ("functional programming ") (" best"))
+--
+splitOnce :: String -> String -> Maybe (Tuple String String)
+splitOnce sub s = do
+  ix <- indexOf sub s
+  return $ Tuple (take ix s) ((drop (length sub)) $ drop ix s)
+
+
+-- | doubleSplit
+--
+-- split on c within sub, of s
+--
+-- >>> doubleSplit " " "is the" "functional programming is the best"
+-- Just (Tuple ("functional programming is") ("the best"))
+--
+doubleSplit :: String -> String -> String -> Maybe (Tuple String String)
+doubleSplit c sub s = do
+  (Tuple a b)   <- splitOnce sub s
+  (Tuple a' b') <- splitOnce c sub
+  return $ Tuple (joinWith "" [a, a']) (joinWith "" [b', b])
+
+
+-- | doubleSplitForFun
+--
+-- for fun.. if you forget Maybe is an instance of Monad
+--
+doubleSplitForFun :: String -> String -> String -> Maybe (Tuple String String)
+doubleSplitForFun c sub s = case splitOnce sub s of
+                                 Nothing          -> Nothing
+                                 Just (Tuple a b) -> case splitOnce c sub of
+                                                          Nothing            -> Nothing
+                                                          Just (Tuple a' b') -> Just $ Tuple (joinWith "" [a, a']) (joinWith "" [b', b])
