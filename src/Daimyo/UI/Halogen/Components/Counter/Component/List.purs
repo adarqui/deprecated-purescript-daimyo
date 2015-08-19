@@ -63,20 +63,20 @@ data ListInput a
 -- s' = Counter
 -- f  = ListInput
 -- f' = CounterInput
--- g  = CounterEffects
+-- g  = (Aff (HalogenEffects (ajax :: AJAX | eff)))
 -- o  = ChildF CounterPlaceholder CounterInput
 -- o' = Const Void
 -- p  = CounterPlaceholder
 -- p' = p
 --
 
-list'1 :: forall p.
+list'1 :: forall eff p.
   ParentComponentP                           -- ParentComponentP s s' f f' g o o' p p'
     State                                    -- s
     Counter                                  -- s'
     ListInput                                -- f
     CounterInput                             -- f'
-    CounterEffects                           -- g
+    (Aff (HalogenEffects (ajax :: AJAX | eff)))                           -- g
     (ChildF CounterPlaceholder CounterInput) -- o
     (Const Void)                             -- o'
     CounterPlaceholder                       -- p
@@ -85,18 +85,18 @@ list'1 = component' render eval peek
   where
   render :: Render State ListInput CounterPlaceholder
   render st = H.p_ [H.text "yo"]
-  eval :: Eval ListInput State ListInput (QueryF State Counter CounterInput CounterEffects CounterPlaceholder p)
+  eval :: Eval ListInput State ListInput (QueryF State Counter CounterInput (Aff (HalogenEffects (ajax :: AJAX | eff))) CounterPlaceholder p)
   eval (ListPing next) = do
     pure next
-  peek :: Peek State ListInput (QueryF State Counter CounterInput CounterEffects CounterPlaceholder p) (ChildF CounterPlaceholder CounterInput)
+  peek :: Peek State ListInput (QueryF State Counter CounterInput (Aff (HalogenEffects (ajax :: AJAX | eff))) CounterPlaceholder p) (ChildF CounterPlaceholder CounterInput)
   peek (ChildF p q) = case q of
     _ -> pure unit
 --
 -- ComponentP s f (QueryFP s s' f' g o' p p') o p
 --
--- list :: forall p.
+-- list :: forall eff p.
 --   ComponentP State ListInput
---   (QueryFP State Counter CounterInput CounterEffects (Const Void) CounterPlaceholder p)
+--   (QueryFP State Counter CounterInput (Aff (HalogenEffects (ajax :: AJAX | eff))) (Const Void) CounterPlaceholder p)
 --   (ChildF CounterPlaceholder CounterInput)
 --   CounterPlaceholder
 --
@@ -105,9 +105,9 @@ list'1 = component' render eval peek
 -- type QueryFP s s' f' g o' p p' = Free (HalogenF (InstalledStateP s s' f' g o' p p') (ChildF p f') g)
 -- type QueryF s s' f' g p p' = QueryFP s s' f' g (Const Void) p p'
 --
-list :: forall p.
+list :: forall eff p.
   ComponentP State ListInput
-  (QueryFP State Counter CounterInput CounterEffects (Const Void) CounterPlaceholder p)
+  (QueryFP State Counter CounterInput (Aff (HalogenEffects (ajax :: AJAX | eff))) (Const Void) CounterPlaceholder p)
   (ChildF CounterPlaceholder CounterInput)
   CounterPlaceholder
 list = component' render eval peek
@@ -120,7 +120,7 @@ list = component' render eval peek
   --
   -- type QueryF s s' f' g p p' = QueryFP s s' f' g (Const Void) p p'
   --
-  eval :: Eval ListInput State ListInput (QueryF State Counter CounterInput CounterEffects CounterPlaceholder p)
+  eval :: Eval ListInput State ListInput (QueryF State Counter CounterInput (Aff (HalogenEffects (ajax :: AJAX | eff))) CounterPlaceholder p)
 
   eval (ListPing next) = do
     r <- liftFI (get "hi" >>= \res -> return (S.trim res.response))
@@ -135,7 +135,7 @@ list = component' render eval peek
   --
   -- data ChildF p f i = ChildF p (f i)
   --
-  peek :: Peek State ListInput (QueryF State Counter CounterInput CounterEffects CounterPlaceholder p) (ChildF CounterPlaceholder CounterInput)
+  peek :: Peek State ListInput (QueryF State Counter CounterInput (Aff (HalogenEffects (ajax :: AJAX | eff))) CounterPlaceholder p) (ChildF CounterPlaceholder CounterInput)
   peek (ChildF p q) = case q of
     _ -> pure unit
 

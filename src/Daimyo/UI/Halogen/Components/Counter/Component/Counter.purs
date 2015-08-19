@@ -37,18 +37,18 @@ instance ordCounterPlaceholder :: Ord CounterPlaceholder where
 
 -- | Creates a `ComponentState` entry based on a `CounterPlaceholder`, used to
 -- | install counter components into a parent component.
-mkCounter :: forall p. CounterPlaceholder -> ComponentState Counter CounterInput CounterEffects p
+mkCounter :: forall eff p. CounterPlaceholder -> ComponentState Counter CounterInput (Aff (HalogenEffects (ajax :: AJAX | eff))) p
 mkCounter (CounterPlaceholder _) = Tuple counter { counter: 0 }
 
 -- | The counter component definition.
-counter :: forall p. Component Counter CounterInput CounterEffects p
+counter :: forall eff p. Component Counter CounterInput (Aff (HalogenEffects (ajax :: AJAX | eff))) p
 counter = component render eval
   where
 
   render :: Render Counter CounterInput p
   render st = H.p_ [H.text "hi"]
 
-  eval :: Eval CounterInput Counter CounterInput CounterEffects
+  eval :: Eval CounterInput Counter CounterInput (Aff (HalogenEffects (ajax :: AJAX | eff)))
   eval (CounterIncr next) = do
     r <- liftFI $ get "hi" >>= \res -> return (trim res.response)
     pure next

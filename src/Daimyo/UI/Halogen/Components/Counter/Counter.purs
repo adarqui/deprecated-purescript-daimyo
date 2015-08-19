@@ -55,7 +55,7 @@ import Daimyo.UI.Halogen.Components.Counter.Shared
 -- s' = Counter
 -- f  = ListInput
 -- f' = CounterInput
--- g  = CounterEffects
+-- g  = (Aff (HalogenEffects (ajax :: AJAX | eff)))
 -- o  = (ChildF CounterPlaceholder CounterINput))
 -- o' = (Const Void)
 -- p  = CounterPlaceholder
@@ -68,7 +68,7 @@ ui'1 :: forall p.
           Counter                                   -- s'
           ListInput                                 -- f
           CounterInput                              -- f'
-          CounterEffects                            -- g
+          (Aff (HalogenEffects (ajax :: AJAX | eff)))                            -- g
           (ChildF CounterPlaceholder CounterInput)  -- o
           (Const Void)                              -- o'
           CounterPlaceholder                        -- p
@@ -102,7 +102,7 @@ ui'1 = install' list mkCounter
 --   let runSubscribeF' = runSubscribeF (queryParent c)
 --   in foldFree (coproduct mergeParentStateF (coproduct runSubscribeF' liftChildF)) (peekComponent c q)
 --
--- mkCounter :: forall p. CounterPlaceholder -> ComponentState Counter CounterInput CounterEffects p
+-- mkCounter :: forall p. CounterPlaceholder -> ComponentState Counter CounterInput (Aff (HalogenEffects (ajax :: AJAX | eff))) p
 --
 ui'3 :: forall p.
         InstalledComponentP                         -- InstalledComponentP s s' f f' g o o' p p'
@@ -110,7 +110,7 @@ ui'3 :: forall p.
           Counter                                   -- s'
           ListInput                                 -- f
           CounterInput                              -- f'
-          CounterEffects                            -- g
+          (Aff (HalogenEffects (ajax :: AJAX | eff)))                            -- g
           (ChildF CounterPlaceholder CounterInput)  -- o
           (Const Void)                              -- o'
           CounterPlaceholder                        -- p
@@ -136,7 +136,7 @@ ui'2 :: forall p.
     State              -- s
     Counter            -- s'
     CounterInput       -- f'
-    CounterEffects     -- g
+    (Aff (HalogenEffects (ajax :: AJAX | eff)))     -- g
     (Const Void)       -- o'
     CounterPlaceholder -- p
     p                  -- p'
@@ -145,7 +145,7 @@ ui'2 :: forall p.
     -- children :: M.Map CounterPlaceholder (ComponentStateP       -- ComponentStateP s f g o p = Tuple (ComponentP s f g o p) s
     --                                         Counter             -- s
     --                                         CounterInput        -- f
-    --                                         CounterEffects      -- g
+    --                                         (Aff (HalogenEffects (ajax :: AJAX | eff)))      -- g
     --                                         (Const Void)        -- o
     --                                         CounterPlaceholder  -- p
     --                                      )
@@ -153,7 +153,7 @@ ui'2 :: forall p.
     --                                              (ComponentP           -- ComponentP s f g o p
     --                                                 Counter            -- s
     --                                                 CounterInput       -- f
-    --                                                 CounterEffects     -- g
+    --                                                 (Aff (HalogenEffects (ajax :: AJAX | eff)))     -- g
     --                                                 (Const Void)       -- o
     --                                                 CounterPlaceholder -- p
     --                                              Counter               -- s
@@ -168,7 +168,7 @@ ui'2 :: forall p.
     )
   )
   -- ComponentP: g
-  CounterEffects
+  (Aff (HalogenEffects (ajax :: AJAX | eff)))
   -- ComponentP: o
   (ChildF
     CounterPlaceholder -- p
@@ -183,7 +183,7 @@ ui'2 = install' list mkCounter
 -- = CoProduct ListInput (ChildF (CounterPlaceholder CounterInput))
 -- = CoProduct (Either (CounterPlaceholder a) (CounterInput a))
 --
-ui :: forall p. ComponentP (InstalledStateP State Counter CounterInput CounterEffects (Const Void) CounterPlaceholder p) (Coproduct ListInput (ChildF CounterPlaceholder CounterInput)) CounterEffects (ChildF CounterPlaceholder CounterInput) p
+ui :: forall eff p. ComponentP (InstalledStateP State Counter CounterInput (Aff (HalogenEffects (ajax :: AJAX | eff))) (Const Void) CounterPlaceholder p) (Coproduct ListInput (ChildF CounterPlaceholder CounterInput)) (Aff (HalogenEffects (ajax :: AJAX | eff))) (ChildF CounterPlaceholder CounterInput) p
 ui = install' list mkCounter
 
 uiComponentCounterMain :: Eff (HalogenEffects (ajax :: AJAX)) Unit
