@@ -69,20 +69,28 @@ data ListInput a
 -- p  = CounterPlaceholder
 -- p' = p
 --
--- list :: forall p. ParentComponentP State Counter ListInput CounterInput CounterEffects (ChildF CounterPlaceholder CounterInput) (Const Void) CounterPlaceholder p
+-- list :: forall p.
+--   ParentComponentP State Counter ListInput CounterInput CounterEffects
+--   (ChildF CounterPlaceholder CounterInput) (Const Void) CounterPlaceholder p
 --
 -- ComponentP s f (QueryFP s s' f' g o' p p') o p
 --
--- list :: forall p. ComponentP State ListInput (QueryFP State Counter CounterInput CounterEffects (Const Void) CounterPlaceholder p) (ChildF CounterPlaceholder CounterInput) CounterPlaceholder
---
+-- list :: forall p.
+--   ComponentP State ListInput
+--   (QueryFP State Counter CounterInput CounterEffects (Const Void) CounterPlaceholder p)
+--   (ChildF CounterPlaceholder CounterInput)
+--   CounterPlaceholder
 --
 -- | An intermediate algebra that component containers "produce" (use as their
 -- | `g` type variable).
 -- type QueryFP s s' f' g o' p p' = Free (HalogenF (InstalledStateP s s' f' g o' p p') (ChildF p f') g)
 -- type QueryF s s' f' g p p' = QueryFP s s' f' g (Const Void) p p'
 --
---
-list :: forall p. ComponentP State ListInput (QueryFP State Counter CounterInput CounterEffects (Const Void) CounterPlaceholder p) (ChildF CounterPlaceholder CounterInput) CounterPlaceholder
+list :: forall p.
+  ComponentP State ListInput
+  (QueryFP State Counter CounterInput CounterEffects (Const Void) CounterPlaceholder p)
+  (ChildF CounterPlaceholder CounterInput)
+  CounterPlaceholder
 list = component' render eval peek
   where
 

@@ -60,9 +60,81 @@ import Daimyo.UI.Halogen.Components.Counter.Shared
 -- p  = CounterPlaceholder
 -- p' = p
 --
--- ui :: forall p. InstalledComponentP State Counter ListInput CounterInput CounterEffects (ChildF CounterPlaceholder CounterInput) (Const Void) CounterPlaceholder p
+
+ui'1 :: forall p.
+        InstalledComponentP                         -- InstalledComponentP s s' f f' g o o' p p'
+          State                                     -- s
+          Counter                                   -- s'
+          ListInput                                 -- f
+          CounterInput                              -- f'
+          CounterEffects                            -- g
+          (ChildF CounterPlaceholder CounterInput)  -- o
+          (Const Void)                              -- o'
+          CounterPlaceholder                        -- p
+          p                                         -- p'
+ui'1 = install' list mkCounter
+
 --
--- ui :: forall p. ComponentP (InstalledStateP State Counter CounterInput CounterEffects (Const Void) CounterPlaceholder p) (Coproduct ListInput (ChildF CounterPlaceholder CounterInput)) CounterEffects (ChildF CounterPlaceholder CounterInput) p
+-- newtype ComponentP s f g o p = Component
+-- { render :: State s (HTML p (f Unit))
+-- , eval   :: Eval f s f g
+-- , peek   :: Peek s f g o
+-- }
+--
+-- type InstalledStateP s s' f' g o' p p' =
+-- { parent   :: s
+-- , children :: M.Map p (ComponentStateP s' f' g o' p')
+-- }
+--
+ui'2 :: forall p.
+  ComponentP           -- ComponentP s f g o p
+  -- ComponentP: s
+  (InstalledStateP     -- InstalledStateP s s' f' g o' p p'
+    State              -- s
+    Counter            -- s'
+    CounterInput       -- f'
+    CounterEffects     -- g
+    (Const Void)       -- o'
+    CounterPlaceholder -- p
+    p                  -- p'
+    -- = {
+    -- parent   :: State
+    -- children :: M.Map CounterPlaceholder (ComponentStateP       -- ComponentStateP s f g o p = Tuple (ComponentP s f g o p) s
+    --                                         Counter             -- s
+    --                                         CounterInput        -- f
+    --                                         CounterEffects      -- g
+    --                                         (Const Void)        -- o
+    --                                         CounterPlaceholder  -- p
+    --                                      )
+    --                                      = Tuple
+    --                                              (ComponentP           -- ComponentP s f g o p
+    --                                                 Counter            -- s
+    --                                                 CounterInput       -- f
+    --                                                 CounterEffects     -- g
+    --                                                 (Const Void)       -- o
+    --                                                 CounterPlaceholder -- p
+    --                                              Counter               -- s
+    -- }
+  )
+  -- ComponentP: f
+  (Coproduct               -- newtype Coproduct f g a = Coproduct (Either (f a) (g a))
+    ListInput              -- f
+    (ChildF                -- data ChildF p f i = ChildF p (f i)
+      CounterPlaceholder   -- p
+      CounterInput         -- f
+    )
+  )
+  -- ComponentP: g
+  CounterEffects
+  -- ComponentP: o
+  (ChildF
+    CounterPlaceholder -- p
+    CounterInput       -- f
+  )
+  -- ComponentP: p'
+  p
+ui'2 = install' list mkCounter
+
 --
 -- newtype Coproduct f g a = Coproduct (Either (f a) (g a))
 -- = CoProduct ListInput (ChildF (CounterPlaceholder CounterInput))
