@@ -123,7 +123,7 @@ list = component' render eval peek
   eval :: Eval ListInput State ListInput (QueryF State Counter CounterInput CounterEffects CounterPlaceholder p)
 
   eval (ListPing next) = do
---    r <- liftFI $ get "hi" >>= \res -> return (S.trim res.response)
+    r <- liftFI (get "hi" >>= \res -> return (S.trim res.response))
 --    counters <- liftFI $ ajaxListTodos
     pure next
 
