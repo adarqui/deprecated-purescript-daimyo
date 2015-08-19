@@ -57,8 +57,32 @@ data ListInput a
 -- |         components to see queries their children have acted upon.
 -- | - `p` - the type of placeholders within the component, used to specify
 -- |         "holes" in which child components can be installed.
--- s = State, s' = Counter, f = ListInput, f' = CounterInput, g = Aff, o = ChildF, o' = Const, p = CounterPlaceholder, p' = p
-list :: forall p. ParentComponentP State Counter ListInput CounterInput CounterEffects (ChildF CounterPlaceholder CounterInput) (Const Void) CounterPlaceholder p
+--
+-- type ParentComponentP s s' f f' g o o' p p' =
+-- s  = State
+-- s' = Counter
+-- f  = ListInput
+-- f' = CounterInput
+-- g  = CounterEffects
+-- o  = ChildF CounterPlaceholder CounterInput
+-- o' = Const Void
+-- p  = CounterPlaceholder
+-- p' = p
+--
+-- list :: forall p. ParentComponentP State Counter ListInput CounterInput CounterEffects (ChildF CounterPlaceholder CounterInput) (Const Void) CounterPlaceholder p
+--
+-- ComponentP s f (QueryFP s s' f' g o' p p') o p
+--
+-- list :: forall p. ComponentP State ListInput (QueryFP State Counter CounterInput CounterEffects (Const Void) CounterPlaceholder p) (ChildF CounterPlaceholder CounterInput) CounterPlaceholder
+--
+--
+-- | An intermediate algebra that component containers "produce" (use as their
+-- | `g` type variable).
+-- type QueryFP s s' f' g o' p p' = Free (HalogenF (InstalledStateP s s' f' g o' p p') (ChildF p f') g)
+-- type QueryF s s' f' g p p' = QueryFP s s' f' g (Const Void) p p'
+--
+--
+list :: forall p. ComponentP State ListInput (QueryFP State Counter CounterInput CounterEffects (Const Void) CounterPlaceholder p) (ChildF CounterPlaceholder CounterInput) CounterPlaceholder
 list = component' render eval peek
   where
 
