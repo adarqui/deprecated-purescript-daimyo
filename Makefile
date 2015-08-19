@@ -30,3 +30,6 @@ ui_halogen_set:
 
 ui_halogen_select:
 	./bin/build_main.sh all_ui_halogen_select.js Daimyo.UI.Halogen.Select uiHalogenSelectMain
+
+ui_halogen_components_counter:
+	./bin/build_main.sh all_ui_halogen_components_counter.js Daimyo.UI.Halogen.Components.Counter uiComponentCounterMain
