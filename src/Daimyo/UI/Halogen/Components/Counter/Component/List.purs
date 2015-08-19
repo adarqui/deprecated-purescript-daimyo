@@ -69,9 +69,28 @@ data ListInput a
 -- p  = CounterPlaceholder
 -- p' = p
 --
--- list :: forall p.
---   ParentComponentP State Counter ListInput CounterInput CounterEffects
---   (ChildF CounterPlaceholder CounterInput) (Const Void) CounterPlaceholder p
+
+list'1 :: forall p.
+  ParentComponentP                           -- ParentComponentP s s' f f' g o o' p p'
+    State                                    -- s
+    Counter                                  -- s'
+    ListInput                                -- f
+    CounterInput                             -- f'
+    CounterEffects                           -- g
+    (ChildF CounterPlaceholder CounterInput) -- o
+    (Const Void)                             -- o'
+    CounterPlaceholder                       -- p
+    p                                        -- p'
+list'1 = component' render eval peek
+  where
+  render :: Render State ListInput CounterPlaceholder
+  render st = H.p_ [H.text "yo"]
+  eval :: Eval ListInput State ListInput (QueryF State Counter CounterInput CounterEffects CounterPlaceholder p)
+  eval (ListPing next) = do
+    pure next
+  peek :: Peek State ListInput (QueryF State Counter CounterInput CounterEffects CounterPlaceholder p) (ChildF CounterPlaceholder CounterInput)
+  peek (ChildF p q) = case q of
+    _ -> pure unit
 --
 -- ComponentP s f (QueryFP s s' f' g o' p p') o p
 --

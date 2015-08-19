@@ -18,6 +18,7 @@ import Network.HTTP.Affjax (AJAX())
 
 import Halogen
 import Halogen.Util (appendToBody)
+import Halogen.Component
 
 import Daimyo.UI.Halogen.Components.Counter.Model
 import Daimyo.UI.Halogen.Components.Counter.Component.List
@@ -73,6 +74,48 @@ ui'1 :: forall p.
           CounterPlaceholder                        -- p
           p                                         -- p'
 ui'1 = install' list mkCounter
+
+-- install' :: forall s s' f f' g o' p p'. (Plus g, Ord p)
+--        => ParentComponentP s s' f f' g (ChildF p f') o' p p'
+--        -> (p -> ComponentStateP s' f' g o' p')
+--        -> InstalledComponentP s s' f f' g (ChildF p f') o' p p'
+-- install' = installer' Left id
+--
+--
+-- installer' :: forall s s' f f' g o' p p' q q'. (Plus g, Ord p)
+--            => (q -> Either p q')
+--            -> (p' -> q')
+--            -> ComponentP s f (QueryFP s s' f' g o' p p') (ChildF p f') q
+--            -> (p -> ComponentStateP s' f' g o' p')
+--            -> ComponentP (InstalledStateP s s' f' g o' p p') (Coproduct f (ChildF p f')) g (ChildF p f') q'
+-- installer' fromQ toQ' c f = Component { render: render', eval: eval, peek: peek }
+-- where
+--
+-- render' :: State (InstalledStateP s s' f' g o' p p') (HTML q' ((Coproduct f (ChildF p f')) Unit))
+-- render' = render fromQ toQ' c f
+--
+-- eval :: Eval (Coproduct f (ChildF p f')) (InstalledStateP s s' f' g o' p p') (Coproduct f (ChildF p f')) g
+-- eval = coproduct (queryParent c) (\q -> queryChild q <* peek q)
+
+-- peek :: Peek (InstalledStateP s s' f' g o' p p') (Coproduct f (ChildF p f')) g (ChildF p f')
+-- peek q =
+--   let runSubscribeF' = runSubscribeF (queryParent c)
+--   in foldFree (coproduct mergeParentStateF (coproduct runSubscribeF' liftChildF)) (peekComponent c q)
+--
+-- mkCounter :: forall p. CounterPlaceholder -> ComponentState Counter CounterInput CounterEffects p
+--
+ui'3 :: forall p.
+        InstalledComponentP                         -- InstalledComponentP s s' f f' g o o' p p'
+          State                                     -- s
+          Counter                                   -- s'
+          ListInput                                 -- f
+          CounterInput                              -- f'
+          CounterEffects                            -- g
+          (ChildF CounterPlaceholder CounterInput)  -- o
+          (Const Void)                              -- o'
+          CounterPlaceholder                        -- p
+          p                                         -- p'
+ui'3 = install' list mkCounter
 
 --
 -- newtype ComponentP s f g o p = Component
