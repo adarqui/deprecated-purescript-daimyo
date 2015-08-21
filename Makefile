@@ -33,3 +33,6 @@ ui_halogen_select:
 
 ui_halogen_components_counter:
 	./bin/build_main.sh all_ui_halogen_components_counter.js Daimyo.UI.Halogen.Components.Counter uiComponentCounterMain
+
+ui_routing_examples:
+	./bin/build_main.sh all_ui_routing_examples.js Daimyo.UI.Routing.Examples uiRoutingExamplesMain
