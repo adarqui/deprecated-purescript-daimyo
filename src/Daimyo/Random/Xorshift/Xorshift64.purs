@@ -30,7 +30,9 @@ xorshift64 = do
   x <- return $ x .^. x `shl` 25
   x <- return $ x .^. x `shr` 27
   put $ Xorshift64 x
-  return $ x * 2685821657736338717
+  return $ x * 3
+-- TODO: FIXME: BROKEN
+--  return $ x * 2685821657736338717
 
 -- | xorshifts64
 --
@@ -46,4 +48,6 @@ xorshifts64 seed n = go seed n
 -- | seed64
 --
 seed64 :: Xorshift64
-seed64 = Xorshift64 9124824867239485709
+seed64 = Xorshift64 3
+-- TODO: FIXME: BROKEN
+-- seed64 = Xorshift64 9124824867239485709

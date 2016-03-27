@@ -15,8 +15,8 @@ import Control.Monad.Trans
 import Control.MonadPlus
 import Control.Plus
 import Control.Monad.State.Trans
-import Control.Monad.Error
-import Control.Monad.Error.Trans
+-- import Control.Monad.Error
+-- import Control.Monad.Error.Trans
 import Control.Monad.Maybe.Trans
 import Control.Monad.Reader.Trans
 import Control.Monad.RWS.Trans
@@ -123,8 +123,8 @@ instance monadXorshift32Xorshift32T1 :: (Monad m, MonadXorshift32 m) => MonadXor
 instance monadXorshift32StateT :: (Monad m, MonadXorshift32 m) => MonadXorshift32 (StateT s m) where
   seed f = lift (seed f)
 
-instance monadXorshift32ErrorT :: (Monad m, MonadXorshift32 m) => MonadXorshift32 (ErrorT e m) where
-  seed f = lift (seed f)
+-- instance monadXorshift32ErrorT :: (Monad m, MonadXorshift32 m) => MonadXorshift32 (ErrorT e m) where
+--  seed f = lift (seed f)
 
 instance monadXorshift32MaybeT :: (Monad m, MonadXorshift32 m) => MonadXorshift32 (MaybeT m) where
   seed f = lift (seed f)

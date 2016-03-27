@@ -1,7 +1,6 @@
 module Daimyo.Misc.State where
 
 import Prelude
-import Data.JSON
 import Data.Maybe
 import Data.Tuple
 import Control.Monad
@@ -11,7 +10,6 @@ import Control.Monad.State.Class
 import Control.Monad.State.Trans
 import Control.Monad.Trans
 import qualified Data.Map as M
-
 import Daimyo.Control.Monad
 
 -- Simple Counter
