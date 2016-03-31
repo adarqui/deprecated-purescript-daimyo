@@ -4,8 +4,11 @@ module Daimyo.Data.Array (
   break,
   unlines,
   lines,
-  elem
+  elem,
+  elemBy
 ) where
+
+
 
 import Prelude
 import Data.Array
@@ -62,12 +65,19 @@ break p xs = case uncons xs of
 -- | elem
 --
 elem :: forall a. Eq a => a -> Array a -> Maybe a
-elem a l = go l
+elem a = elemBy ((==) a)
+
+
+
+-- | elemBy
+--
+elemBy :: forall a. Eq a => (a -> Boolean) -> Array a -> Maybe a
+elemBy by l = go l
   where
     go [] = Nothing
     go z = case uncons z of
       Nothing -> Nothing
       Just {head:x, tail:xs} ->
-        if x == a
-          then (Just a)
+        if by x
+          then (Just x)
           else (go xs)
