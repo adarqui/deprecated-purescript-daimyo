@@ -1,8 +1,10 @@
 module Daimyo.Data.Array (
   intersperse,
+  prependToAll,
   break,
   unlines,
-  lines
+  lines,
+  elem
 ) where
 
 import Prelude
@@ -55,3 +57,17 @@ break p xs = case uncons xs of
                     | p x       -> Tuple [] xs
                     | otherwise -> let r = break p xs' in case r of
                                        Tuple ys zs -> Tuple (x:ys) zs
+
+
+-- | elem
+--
+elem :: forall a. Eq a => a -> Array a -> Maybe a
+elem a l = go l
+  where
+    go [] = Nothing
+    go z = case uncons z of
+      Nothing -> Nothing
+      Just {head:x, tail:xs} ->
+        if x == a
+          then (Just a)
+          else (go xs)

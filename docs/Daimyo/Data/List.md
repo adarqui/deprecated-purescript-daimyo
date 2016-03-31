@@ -1,3 +1,0 @@
-## Module Daimyo.Data.List
-
-
